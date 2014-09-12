@@ -1146,7 +1146,7 @@ WinJSTests.VirtualizedViewTests = function () {
             return setupListView(10);
         }).then(function (listView) {
 
-            LiveUnit.LoggingCore.logComment("inserts before the realzied range");
+            LiveUnit.LoggingCore.logComment("inserts before the realized range");
             listView.itemDataSource.list.unshift({
                 title: "New"
             });
