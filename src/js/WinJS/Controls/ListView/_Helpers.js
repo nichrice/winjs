@@ -14,9 +14,31 @@ define([
         return new Array(count + 1).join(markup);
     }
 
+    function stripedContainers(count, nextItemIndex) {
+        if (count > 0) {
+            var containersMarkup = "",
+                evenStripe = "win-container-even",
+                oddStripe = "win-container-odd",
+                stripes = nextItemIndex % 2 === 0 ? [evenStripe, oddStripe] : [oddStripe, evenStripe];
+
+            var numTuples = Math.floor(count / 2);
+            if (numTuples) {
+                var containersTuple = "<div class='win-container " + stripes[0] + " win-backdrop'></div>" +
+                "<div class='win-container " + stripes[1] + " win-backdrop'></div>";
+                containersMarkup += repeat(containersTuple, numTuples);
+            }
+            if (count % 2 !== 0) {
+                containersMarkup += "<div class='win-container " + stripes[0] + " win-backdrop'></div>"
+            }
+
+            return containersMarkup;
+        }
+    }
+
     _Base.Namespace._moduleDefine(exports, "WinJS.UI", {
         _nodeListToArray: nodeListToArray,
         _repeat: repeat,
+        _stripedContainers: stripedContainers,
         _ListViewAnimationHelper: {
             fadeInElement: function (element) {
                 return Animations.fadeIn(element);
