@@ -913,6 +913,7 @@ define([
     }
 
     var supportsZoomTo = !!_Global.HTMLElement.prototype.msZoomTo;
+    var supportsSnapPoints = "msScrollSnapType" in _Global.document.documentElement.style;
     var supportsTouchDetection = !!(_Global.MSPointerEvent || _Global.TouchEvent);
 
     var uniqueElementIDCounter = 0;
@@ -957,6 +958,12 @@ define([
     var _dataKey = "_msDataKey";
     _Base.Namespace._moduleDefine(exports, "WinJS.Utilities", {
         _dataKey: _dataKey,
+
+        _supportsSnapPoints: {
+            get: function () {
+                return supportsSnapPoints;
+            }
+        },
 
         _supportsTouchDetection: {
             get: function () {
@@ -1010,48 +1017,6 @@ define([
                 }
                 return this._supportsTouchActionCrossSlideValue;
             }
-        },
-
-        _detectSnapPointsSupport: function () {
-            // Snap point feature detection is special - On most platforms it is enough to check if 'msZoomTo'
-            // is available, however, Windows Phone IEs claim that they support it but don't really do so we
-            // test by creating a scroller with mandatory snap points and test against ManipulationStateChanged events.
-            if (!this._snapPointsDetectionPromise) {
-                if (!_Global.HTMLElement.prototype.msZoomTo) {
-                    this._snapPointsDetectionPromise = Promise.wrap(false);
-                } else {
-                    this._snapPointsDetectionPromise = new Promise(function (c) {
-                        var scroller = _Global.document.createElement("div");
-                        scroller.style.width = "100px";
-                        scroller.style.overflowX = "scroll";
-                        scroller.style.msScrollSnapType = "mandatory";
-                        scroller.style.position = "absolute";
-                        scroller.style.opacity = "0";
-                        scroller.style.visibility = "hidden";
-                        var handler = function (e) {
-                            scroller.removeEventListener("MSManipulationStateChanged", handler);
-                            _Global.clearTimeout(timeoutHandle);
-                            _Global.document.body.removeChild(scroller);
-                            c(true);
-                        };
-                        scroller.addEventListener("MSManipulationStateChanged", handler);
-
-                        var content = _Global.document.createElement("div");
-                        content.style.width = content.style.height = "200px";
-                        scroller.appendChild(content);
-
-                        _Global.document.body.appendChild(scroller);
-                        scroller.msZoomTo({ contentX: 90 });
-
-                        var timeoutHandle = _Global.setTimeout(function () {
-                            scroller.removeEventListener("MSManipulationStateChanged", handler);
-                            _Global.document.body.removeChild(scroller);
-                            c(false);
-                        }, 50);
-                    });
-                }
-            }
-            return this._snapPointsDetectionPromise;
         },
 
         _MSGestureEvent: _MSGestureEvent,

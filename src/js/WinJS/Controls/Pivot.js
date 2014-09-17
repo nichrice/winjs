@@ -67,8 +67,7 @@ define([
             };
             var MSManipulationEventStates = _ElementUtilities._MSManipulationEvent;
 
-            var supportsSnap = false;
-            var ready = null;
+            var supportsSnap = _ElementUtilities._supportsSnapPoints && _ElementUtilities._supportsZoomTo;
 
             function _nop() { }
             var headersStates = {
@@ -582,13 +581,6 @@ define([
                 /// The new Pivot.
                 /// </returns>
                 /// </signature>
-
-                if (!ready) {
-                    ready = _ElementUtilities._detectSnapPointsSupport().then(function (value) {
-                        supportsSnap = value;
-                    });
-                }
-
                 element = element || _Global.document.createElement("DIV");
                 options = options || {};
 
@@ -922,18 +914,15 @@ define([
                     this._firstLoad = true;
                     this._cachedRTL = _Global.getComputedStyle(this._element, null).direction === "rtl";
 
-                    var that = this;
-                    ready.done(function () {
-                        headersStates.common.refreshHeadersState(that, true);
-                        if (!supportsSnap) {
-                            _ElementUtilities.addClass(that.element, Pivot._ClassName.pivotNoSnap);
-                        }
+                    headersStates.common.refreshHeadersState(this, true);
+                    if (!supportsSnap) {
+                        _ElementUtilities.addClass(this.element, Pivot._ClassName.pivotNoSnap);
+                    }
 
-                        that._pendingRefresh = false;
-                        that.selectedIndex = Math.min(pendingIndexOnScreen, that.items.length - 1);
-                        that._firstLoad = false;
-                        that._recenterUI();
-                    });
+                    this._pendingRefresh = false;
+                    this.selectedIndex = Math.min(pendingIndexOnScreen, this.items.length - 1);
+                    this._firstLoad = false;
+                    this._recenterUI();
                 },
 
                 _attachItems: function pivot_attachItems() {
@@ -1074,7 +1063,7 @@ define([
                     }
 
                     var zooming = false;
-                    if (supportsSnap && _ElementUtilities._supportsZoomTo && this._currentManipulationState !== MSManipulationEventStates.MS_MANIPULATION_STATE_INERTIA) {
+                    if (supportsSnap && this._currentManipulationState !== MSManipulationEventStates.MS_MANIPULATION_STATE_INERTIA) {
                         if (this._firstLoad) {
                             _Log.log && _Log.log('_firstLoad index:' + this.selectedIndex + ' offset: ' + this._offsetFromCenter + ' scrollLeft: ' + this._currentScrollTargetLocation, "winjs pivot", "log");
                             _ElementUtilities.setScrollPosition(this._viewportElement, { scrollLeft: this._currentScrollTargetLocation });
