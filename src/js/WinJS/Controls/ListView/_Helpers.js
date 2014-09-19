@@ -2,8 +2,9 @@
 define([
     'exports',
     '../../Core/_Base',
+    '../ItemContainer/_Constants',
     '../../Animations'
-    ], function helpersInit(exports, _Base, Animations) {
+], function helpersInit(exports, _Base, _Constants, Animations) {
     "use strict";
 
     function nodeListToArray(nodeList) {
@@ -17,8 +18,8 @@ define([
     function stripedContainers(count, nextItemIndex) {
         if (count > 0) {
             var containersMarkup = "",
-                evenStripe = "win-container-even",
-                oddStripe = "win-container-odd",
+                evenStripe = _Constants._containerEvenClass,
+                oddStripe = _Constants._containerOddClass,
                 stripes = nextItemIndex % 2 === 0 ? [evenStripe, oddStripe] : [oddStripe, evenStripe];
 
             var numTuples = Math.floor(count / 2);

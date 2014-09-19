@@ -35,7 +35,7 @@ define([
     './ListView/_VirtualizeContentsView',
     'require-style!less/desktop/controls',
     'require-style!less/phone/controls'
-    ], function listViewImplInit(_Global, _Base, _BaseUtils, _ErrorFromName, _Events, _Log, _Resources, _WriteProfilerMark, _TransitionAnimation, BindingList, Promise, Scheduler, _Signal, _Control, _Dispose, _ElementUtilities, _Hoverable, _ItemsManager, _SafeHtml, _TabContainer, _UI, _VersionManager, _Constants, _ItemEventsHandler, _BrowseMode, _ErrorMessages, _GroupFocusCache, _GroupsContainer, _Helpers, _ItemsContainer, _Layouts, _SelectionManager, _VirtualizeContentsView) {
+], function listViewImplInit(_Global, _Base, _BaseUtils, _ErrorFromName, _Events, _Log, _Resources, _WriteProfilerMark, _TransitionAnimation, BindingList, Promise, Scheduler, _Signal, _Control, _Dispose, _ElementUtilities, _Hoverable, _ItemsManager, _SafeHtml, _TabContainer, _UI, _VersionManager, _Constants, _ItemEventsHandler, _BrowseMode, _ErrorMessages, _GroupFocusCache, _GroupsContainer, _Helpers, _ItemsContainer, _Layouts, _SelectionManager, _VirtualizeContentsView) {
     "use strict";
 
     var transformNames = _BaseUtils._browserStyleEquivalents["transform"];
@@ -1684,9 +1684,17 @@ define([
                                         // component consumes this).
                                         //
                                         if (elementInfo.itemBox) {
+                                            var itemBox = elementInfo.itemBox,
+                                                oddStripe = _Constants._containerEvenClass,
+                                                evenStripe = _Constants._containerEvenClass,
+                                                // Store the even/odd container class from the container the itemBox was in before being removed. 
+                                                // We want to reapply that class on whichever container we use to perform the itemBox's exit animation.
+                                                containerStripe = _ElementUtilities.hasClass(itemBox.parentElement, evenStripe)? evenStripe: oddStripe;
+
                                             that._updater.removed.push({
                                                 index: index,
-                                                itemBox: elementInfo.itemBox
+                                                itemBox: itemBox,
+                                                containerStripe: containerStripe,
                                             });
                                         }
                                         that._updater.deletesCount++;
@@ -2093,6 +2101,7 @@ define([
                             modifiedElement.newIndex = -1;
                             if (!modifiedElement._removalHandled) {
                                 modifiedElement._itemBox = removed.itemBox;
+                                modifiedElement._containerStripe = removed.containerStripe;
                             }
                             this._modifiedElements.push(modifiedElement);
                         }
@@ -4294,6 +4303,13 @@ define([
                             }
                             if (_ElementUtilities.hasClass(itemBox, _Constants._selectedClass)) {
                                 _ElementUtilities.addClass(container, _Constants._selectedClass);
+                            }
+                            if (modifiedElements._containerStripe = _Constants._containerEvenClass) {
+                                _ElementUtilities.addClass(container, _Constants._containerEvenClass);
+                                _ElementUtilities.removeClass(container, _Constants._containerOddClass);
+                            } else {
+                                _ElementUtilities.addClass(container, _Constants._containerOddClass);
+                                _ElementUtilities.removeClass(container, _Constants._containerEvenClass);
                             }
                             container.appendChild(itemBox);
                             modifiedElements[i].element = container;
