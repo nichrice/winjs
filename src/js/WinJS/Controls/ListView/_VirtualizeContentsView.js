@@ -2108,22 +2108,22 @@ define([
 
                         // 1) Add missing containers to the latest itemsblock if it was only partially filled during the previous pass.
                         if (lastExistingBlock && lastExistingBlock.items.length < blockSize) {
-                            var fix = Math.min(toAdd, blockSize - lastExistingBlock.items.length),
-                                oldSize = lastExistingBlock.items.length,
+                            var emptySpotsToFill = Math.min(toAdd, blockSize - lastExistingBlock.items.length),
+                                sizeOfOldLastBlock = lastExistingBlock.items.length,
 
-                            indexOfNextGroupItem = (itemsContainer.itemsBlocks.length - 1 * blockSize) + oldSize;
-                            var containersMarkup = _Helpers._stripedContainers(fix, indexOfNextGroupItem);
+                            indexOfNextGroupItem = (itemsContainer.itemsBlocks.length - 1 * blockSize) + sizeOfOldLastBlock;
+                            var containersMarkup = _Helpers._stripedContainers(emptySpotsToFill, indexOfNextGroupItem);
 
                             _SafeHtml.insertAdjacentHTMLUnsafe(lastExistingBlock.element, "beforeend", containersMarkup);
                             children = lastExistingBlock.element.children;
 
-                            for (var j = 0; j < fix; j++) {
-                                var child = children[oldSize + j];
+                            for (var j = 0; j < emptySpotsToFill; j++) {
+                                var child = children[sizeOfOldLastBlock + j];
                                 lastExistingBlock.items.push(child);
                                 that.containers.push(child);
                             }
 
-                            toAdd -= fix;
+                            toAdd -= emptySpotsToFill;
                         }
                         indexOfNextGroupItem = itemsContainer.itemsBlocks.length * blockSize;
 
@@ -2132,12 +2132,12 @@ define([
                         }
 
                         // 2) Generate as many complete itemblocks of containers as we can.
-                        var blocks = Math.floor(toAdd / blockSize);
+                        var newblocksCount = Math.floor(toAdd / blockSize);
                         var markup = "";
 
-                        var numBlockTuples = Math.floor(blocks / 2);
+                        var numBlockTuples = Math.floor(newblocksCount / 2);
                         if (numBlockTuples) {
-                            // If we have at least 2 full itemblocks of containers to generate, repeat markup for itemsblocks as a tuple.
+                            // If we have at least 2 full itemblocks worth of containers to add, generate blocks markup as tuples.
                             // This will ensure the container striping pattern is maintained regardless if blockSize is even or odd.
                             var firstBlockFirstItemIndex = indexOfNextGroupItem,
                                 secondBlockFirstItemIndex = indexOfNextGroupItem + blockSize,
@@ -2148,25 +2148,25 @@ define([
                             markup += _Helpers._repeat(blockTupleMarkup, numBlockTuples);
                             indexOfNextGroupItem += numBlockTuples * 2;
                         }
-                        if (blocks % 2 !== 0) {
-                            // One trailing itemsblock remains after finishing tuples.                            
+                        if (newblocksCount % 2 !== 0) {
+                            // One singular itemsblock remains after finishing tuples.                            
                             markup += "<div class='win-itemsblock'>" + _Helpers._stripedContainers(blockSize, indexOfNextGroupItem) + "</div>";
                             indexOfNextGroupItem += blockSize;
                         }
 
                         // 3) Generate and partially fill, one last itemblock if there are any remaining containers to add.
-                        var lastBlockSize = toAdd % blockSize;
-                        if (lastBlockSize) {
-                            markup += "<div class='win-itemsblock'>" + _Helpers._stripedContainers(lastBlockSize, indexOfNextGroupItem) + "</div>";
-                            indexOfNextGroupItem += lastBlockSize;
-                            blocks++;
+                        var sizeOfNewLastBlock = toAdd % blockSize;
+                        if (sizeOfNewLastBlock) {
+                            markup += "<div class='win-itemsblock'>" + _Helpers._stripedContainers(sizeOfNewLastBlock, indexOfNextGroupItem) + "</div>";
+                            indexOfNextGroupItem += sizeOfNewLastBlock;
+                            newblocksCount++;
                         }
 
                         var blocksTemp = _Global.document.createElement("div");
                         _SafeHtml.setInnerHTMLUnsafe(blocksTemp, markup);
                         var children = blocksTemp.children;
 
-                        for (var i = 0; i < blocks; i++) {
+                        for (var i = 0; i < newblocksCount; i++) {
                             var block = children[i],
                                 blockNode = {
                                     element: block,

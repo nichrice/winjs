@@ -3944,50 +3944,91 @@ define([
 
                         var itemsContainer = groupNode.itemsContainer,
                             blocks = itemsContainer.itemsBlocks,
+                            blockSize = that._view._blockSize,
                             lastBlock = blocks.length ? blocks[blocks.length - 1] : null,
-                            currentSize = blocks.length ? (blocks.length - 1) * that._view._blockSize + lastBlock.items.length : 0,
-                            delta = newSize - currentSize,
-                            oldSize, children;
+                            indexOfNextGroupItem = blocks.length ? (blocks.length - 1) * blockSize + lastBlock.items.length : 0,
+                            delta = newSize - indexOfNextGroupItem,
+                            children;
 
                         if (delta > 0) {
-                            if (lastBlock && lastBlock.items.length < that._view._blockSize) {
-                                var toAdd = Math.min(delta, that._view._blockSize - lastBlock.items.length);
-                                _SafeHtml.insertAdjacentHTMLUnsafe(lastBlock.element, "beforeend", _Helpers._repeat("<div class='win-container win-backdrop'></div>", toAdd));
+                            // Insert new containers.
+                            var toAdd = delta,
+                                sizeOfOldLastBlock;
+                            if (lastBlock && lastBlock.items.length < blockSize) {
+                                // 1) Add containers to the last itemsblock in the group if it's not already full.
+                                var emptySpotsToFill = Math.min(toAdd, blockSize - lastBlock.items.length);
+                                sizeOfOldLastBlock = lastBlock.items.length;
 
-                                oldSize = lastBlock.items.length;
+                                //_SafeHtml.insertAdjacentHTMLUnsafe(lastBlock.element, "beforeend", _Helpers._repeat("<div class='win-container win-backdrop'></div>", toAdd));
+                                var containersMarkup = _Helpers._stripedContainers(emptySpotsToFill, indexOfNextGroupItem);
+
+                                _SafeHtml.insertAdjacentHTMLUnsafe(lastBlock.element, "beforeend", containersMarkup);
                                 children = lastBlock.element.children;
 
-                                for (var j = 0; j < toAdd; j++) {
-                                    lastBlock.items.push(children[oldSize + j]);
+                                for (var j = 0; j < emptySpotsToFill; j++) {
+                                    lastBlock.items.push(children[sizeOfOldLastBlock + j]);
                                 }
 
-                                delta -= toAdd;
+                                toAdd -= emptySpotsToFill;
+                            }
+                            indexOfNextGroupItem = blocks.length * blockSize;
+
+                            // 2) Generate as many complete itemblocks of containers as we can.
+                            var newBlocksCount = Math.floor(toAdd / blockSize);
+                            var markup = "";
+
+                            var numBlockTuples = Math.floor(newBlocksCount / 2);
+                            if (numBlockTuples) {
+                                // If we have at least 2 full itemblocks worth of containers to add, generate blocks markup as tuples.
+                                // This will ensure the container striping pattern is maintained regardless if blockSize is even or odd.
+                                var firstBlockFirstItemIndex = indexOfNextGroupItem,
+                                    secondBlockFirstItemIndex = indexOfNextGroupItem + blockSize,
+                                    blockTupleMarkup =
+                                    "<div class='win-itemsblock'>" + _Helpers._stripedContainers(blockSize, firstBlockFirstItemIndex) + "</div>" +
+                                    "<div class='win-itemsblock'>" + _Helpers._stripedContainers(blockSize, secondBlockFirstItemIndex) + "</div>";
+
+                                markup += _Helpers._repeat(blockTupleMarkup, numBlockTuples);
+                                indexOfNextGroupItem += numBlockTuples * 2;
+                            }
+                            if (newBlocksCount % 2 !== 0) {
+                                // One singular itemsblock remains after finishing tuples.                            
+                                markup += "<div class='win-itemsblock'>" + _Helpers._stripedContainers(blockSize, indexOfNextGroupItem) + "</div>";
+                                indexOfNextGroupItem += blockSize;
                             }
 
-                            var blocksCount = Math.floor(delta / that._view._blockSize),
-                                lastBlockSize = delta % that._view._blockSize;
-
-                            var blockMarkup = "<div class='win-itemsblock'>" + _Helpers._repeat("<div class='win-container win-backdrop'></div>", that._view._blockSize) + "</div>",
-                                markup = _Helpers._repeat(blockMarkup, blocksCount);
-
-                            if (lastBlockSize) {
-                                markup += "<div class='win-itemsblock'>" + _Helpers._repeat("<div class='win-container win-backdrop'></div>", lastBlockSize) + "</div>";
-                                blocksCount++;
+                            // 3) Generate and partially fill, one last itemblock if there are any remaining containers to add.
+                            var sizeOfNewLastBlock = toAdd % blockSize;
+                            if (sizeOfNewLastBlock) {
+                                markup += "<div class='win-itemsblock'>" + _Helpers._stripedContainers(sizeOfNewLastBlock, indexOfNextGroupItem) + "</div>";
+                                indexOfNextGroupItem += sizeOfNewLastBlock;
+                                newBlocksCount++;
                             }
+
+                            //var blocksCount = Math.floor(delta / that._view._blockSize),
+                            //    lastBlockSize = delta % that._view._blockSize;
+
+                            //var blockMarkup = "<div class='win-itemsblock'>" + _Helpers._repeat("<div class='win-container win-backdrop'></div>", that._view._blockSize) + "</div>",
+                            //    markup = _Helpers._repeat(blockMarkup, blocksCount);
+
+                            //if (lastBlockSize) {
+                            //    markup += "<div class='win-itemsblock'>" + _Helpers._repeat("<div class='win-container win-backdrop'></div>", lastBlockSize) + "</div>";
+                            //    blocksCount++;
+                            //}
 
                             var blocksTemp = _Global.document.createElement("div");
                             _SafeHtml.setInnerHTMLUnsafe(blocksTemp, markup);
-
                             var children = blocksTemp.children;
-                            for (var j = 0; j < blocksCount; j++) {
+
+                            for (var j = 0; j < newBlocksCount; j++) {
                                 var block = children[j],
                                     blockNode = {
                                         element: block,
                                         items: _Helpers._nodeListToArray(block.children)
                                     };
-                                itemsContainer.itemsBlocks.push(blockNode);
+                                blocks.push(blockNode);
                             }
                         } else if (delta < 0) {
+                            // Remove Containers
                             for (var n = delta; n < 0; n++) {
 
                                 var container = lastBlock.items.pop();
@@ -4011,6 +4052,7 @@ define([
                             }
                         }
 
+                        // Update references to containers.
                         for (var j = 0, len = blocks.length; j < len; j++) {
                             var block = blocks[j];
                             for (var n = 0; n < block.items.length; n++) {
