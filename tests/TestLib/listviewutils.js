@@ -872,9 +872,30 @@ ListViewUtils.prototype = (function () {
                             listView.addEventListener("loadingstatechanged", waitForReady_handler, false);
                         } else {
                             WinJS.Utilities.Scheduler.schedulePromiseIdle(null, "ListViewWaitForReadyComplete").then(function() {
+                                checkStripes();
                                 c(x);
                             });
                         }
+                    }
+
+                    function checkStripes() {
+                        var groups = [].slice.call(listView.element.querySelectorAll(".win-itemscontainer"));
+                        var numContainers = 0;
+                        groups.forEach(function (group) {
+                            var containers = [].slice.call(group.querySelectorAll(".win-container"));
+                            numContainers += containers.length;
+                            // Verify each container has the right class
+                            containers.forEach(function (container, indexOfGroupItem) {
+                                if (indexOfGroupItem % 2 === 0) {
+
+                                    LiveUnit.Assert.isTrue(WinJS.Utilities.hasClass(container, "win-container-even"), "Even index " + indexOfGroupItem + ": doesn't have even class!!");
+                                } else {
+
+                                    LiveUnit.Assert.isTrue(WinJS.Utilities.hasClass(container, "win-container-odd"), "Odd index " + indexOfGroupItem + ": doesn't have odd class!!")
+                                }
+                            });
+                        });
+                        console.log("Stripes valid on " + numContainers + " containers ");
                     }
 
                     function waitForReady_start() {
