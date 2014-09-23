@@ -170,28 +170,6 @@ define([
                     return this._range;
                 }
             });
-            var noBlockSize = 0;
-            function checkStripes(listView) {
-                if (listView._view._blockSize > 0) {
-                    var groups = [].slice.call(listView.element.querySelectorAll(".win-itemscontainer"));
-                    var numContainers = 0;
-                    groups.forEach(function (group) {
-                        var containers = [].slice.call(group.querySelectorAll(".win-container"));
-                        numContainers += containers.length;
-                        // Verify each container has the right class
-                        containers.forEach(function (container, indexOfGroupItem) {
-                            if (indexOfGroupItem % 2 === 0) {
-                                LiveUnit.Assert.isTrue(WinJS.Utilities.hasClass(container, "win-container-even"), "Even index " + indexOfGroupItem + ": doesn't have even class!!");
-                            } else {
-                                LiveUnit.Assert.isTrue(WinJS.Utilities.hasClass(container, "win-container-odd"), "Odd index " + indexOfGroupItem + ": doesn't have odd class!!")
-                            }
-                        });
-                    });
-                    console.log("Stripes valid on " + numContainers + " containers ");
-                } else {
-                    console.log("No block size " + ++noBlockSize + " times");
-                }
-            }
 
             var ZoomableView = _Base.Class.define(function ZoomableView_ctor(listView) {
                 // Constructor
@@ -345,10 +323,6 @@ define([
                 this._runningInit = false;
 
                 this._batchViewUpdates(_Constants._ViewChange.rebuild, _Constants._ScrollToPriority.medium, 0);
-
-                var that = this;
-                this.addEventListener("loadingstatechanged", function () { checkStripes(that); });
-
                 this._writeProfilerMark("constructor,StopTM");
             }, {
                 // Public properties
