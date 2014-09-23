@@ -912,8 +912,7 @@ define([
         setAdjustedScrollPosition(element, position.scrollLeft, position.scrollTop);
     }
 
-    var supportsZoomTo = !!_Global.HTMLElement.prototype.msZoomTo;
-    var supportsSnapPoints = "msScrollSnapType" in _Global.document.documentElement.style;
+    var supportsSnapPoints = !!(_Global.MSApp || _Global.navigator.msManipulationViewsEnabled);
     var supportsTouchDetection = !!(_Global.MSPointerEvent || _Global.TouchEvent);
 
     var uniqueElementIDCounter = 0;
@@ -968,12 +967,6 @@ define([
         _supportsTouchDetection: {
             get: function () {
                 return supportsTouchDetection;
-            }
-        },
-
-        _supportsZoomTo: {
-            get: function () {
-                return supportsZoomTo;
             }
         },
 
