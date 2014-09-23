@@ -1025,7 +1025,7 @@ WinJSTests.ListEditorTest = function () {
 
     this.testThatUpdateAffectedRangeIsMakingUnionsCorrectly = function (complete) {
         // This test makes a list modification to trigger listview layout, then makes another modification to cause listview layout to cancel and reset.
-        // This test is testing that the new ListView_affectedRange property is an accurate union of the 2 original modifications when layour is called
+        // This test is testing that the new ListView_affectedRange property is an accurate union of the 2 original modifications when layout is called
         // as part of the reset after being canceled.
 
         function renderer(itemPromise) {

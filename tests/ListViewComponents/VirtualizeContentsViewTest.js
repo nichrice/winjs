@@ -78,7 +78,7 @@ WinJSTests.VirtualizedViewTests = function () {
     }
 
     function ensureResize() {
-        if(!canElementResize) {
+        if (!canElementResize) {
             WinJS.Utilities._resizeNotifier._handleResize();
         }
     }
@@ -106,7 +106,7 @@ WinJSTests.VirtualizedViewTests = function () {
         defaultDisableCustomPagesPrefetch = WinJS.UI._VirtualizeContentsView._disableCustomPagesPrefetch;
         defaultIsiOS = WinJS.Utilities._isiOS;
 
-        CommonUtilities.detectMsElementResize(function(canResize) {
+        CommonUtilities.detectMsElementResize(function (canResize) {
             canElementResize = canResize;
             completed();
         });
@@ -1296,7 +1296,7 @@ WinJSTests.VirtualizedViewTests = function () {
             layout: new WinJS.UI.GridLayout()
         });
 
-        if(!listView.layout._usingStructuralNodes) {
+        if (!listView.layout._usingStructuralNodes) {
             placeholder.parentNode.removeChild(placeholder);
             complete();
             return;
@@ -1420,7 +1420,7 @@ WinJSTests.VirtualizedViewTests = function () {
                 }
             ];
 
-        if(!listView.layout._usingStructuralNodes) {
+        if (!listView.layout._usingStructuralNodes) {
             placeholder.parentNode.removeChild(placeholder);
             complete();
             return;
@@ -1465,7 +1465,7 @@ WinJSTests.VirtualizedViewTests = function () {
                 }
             ];
 
-        if(!listView.layout._usingStructuralNodes) {
+        if (!listView.layout._usingStructuralNodes) {
             placeholder.parentNode.removeChild(placeholder);
             complete();
             return;
@@ -3493,7 +3493,7 @@ WinJSTests.VirtualizedViewTests = function () {
             LiveUnit.Assert.areEqual(1, stateChangeCounter.complete);
 
             listView._onMSManipulationStateChanged({ currentState: 1 });
-            WinJS.Utilities.setScrollPosition(listView._viewport, {scrollLeft: 1500});
+            WinJS.Utilities.setScrollPosition(listView._viewport, { scrollLeft: 1500 });
 
             return WinJS.Promise.timeout(300);
         }).then(function () {
@@ -3505,7 +3505,7 @@ WinJSTests.VirtualizedViewTests = function () {
             LiveUnit.Assert.areEqual(1, stateChangeCounter.itemsLoaded);
             LiveUnit.Assert.areEqual(1, stateChangeCounter.complete);
 
-            WinJS.Utilities.setScrollPosition(listView._viewport, {scrollLeft: 3000});
+            WinJS.Utilities.setScrollPosition(listView._viewport, { scrollLeft: 3000 });
 
             return WinJS.Promise.timeout(300);
         }).then(function () {
@@ -4027,7 +4027,7 @@ WinJSTests.VirtualizedViewTests = function () {
             }
         });
 
-        if(!listView.layout._usingStructuralNodes) {
+        if (!listView.layout._usingStructuralNodes) {
             VirtualizeContentsViewTestHost.removeChild(element);
             complete();
             return;
@@ -4590,7 +4590,7 @@ WinJSTests.VirtualizedViewTests = function () {
             layout: new WinJS.UI.GridLayout()
         });
 
-        if(!listView.layout._usingStructuralNodes) {
+        if (!listView.layout._usingStructuralNodes) {
             placeholder.parentNode.removeChild(placeholder);
             complete();
             return;
@@ -5291,7 +5291,7 @@ WinJSTests.VirtualizedViewTests = function () {
         });
     };
 
-    this.testCustomPagesToPrefetch = function(complete) {
+    this.testCustomPagesToPrefetch = function (complete) {
         WinJS.Utilities._setIsiOS(true);
 
         var viewPortHeight = 300,
@@ -5299,13 +5299,13 @@ WinJSTests.VirtualizedViewTests = function () {
               list = new WinJS.Binding.List(initData(count));
 
         function renderer(itemPromise) {
-                return itemPromise.then(function (item) {
-                    var element = document.createElement("div");
-                    element.textContent = item.data.title;
-                    element.style.width = element.style.height = "100px";
-                    return element;
-                });
-            }
+            return itemPromise.then(function (item) {
+                var element = document.createElement("div");
+                element.textContent = item.data.title;
+                element.style.width = element.style.height = "100px";
+                return element;
+            });
+        }
 
         var placeholder = createListViewElement(viewPortHeight + "px");
         var listView = new WinJS.UI.ListView(placeholder, {
@@ -5334,18 +5334,18 @@ WinJSTests.VirtualizedViewTests = function () {
         }).then(function () {
 
             // When our scroll position = viewPortHeight, we should have the current viewport full of items + up to 1 page behind + customMaxPages pages ahead
-            expectedRealizedCount = (customMinPages > 0 ? elementsPerPage : 0)  /* up to 1 page behind*/  + elementsPerPage  /* viewport*/  + (customMaxPages * elementsPerPage);
+            expectedRealizedCount = (customMinPages > 0 ? elementsPerPage : 0)  /* up to 1 page behind*/ + elementsPerPage  /* viewport*/ + (customMaxPages * elementsPerPage);
             LiveUnit.Assert.areEqual(expectedRealizedCount, placeholder.querySelectorAll(".win-container:not(.win-backdrop)").length);
 
             // Scroll down customMaxPages viewports
-            listView.scrollPosition = customMaxPages* viewPortHeight;
+            listView.scrollPosition = customMaxPages * viewPortHeight;
 
             return waitForDeferredAction(listView, -1)();
         }).then(function () {
             LiveUnit.Assert.areEqual(listView.indexOfFirstVisible, customMaxPages * elementsPerPage);
 
             // Since we are scrolling downward, we optimize the front buffer, so we should have customMinPages pages behind + current viewport + customMaxPages ahead
-            expectedRealizedCount = (customMinPages * elementsPerPage) /* behind*/  + elementsPerPage  /* viewport*/  + (customMaxPages * elementsPerPage);
+            expectedRealizedCount = (customMinPages * elementsPerPage) /* behind*/ + elementsPerPage  /* viewport*/ + (customMaxPages * elementsPerPage);
             LiveUnit.Assert.areEqual(expectedRealizedCount, placeholder.querySelectorAll(".win-container:not(.win-backdrop)").length);
 
             complete();
@@ -5372,6 +5372,32 @@ WinJSTests.VirtualizedViewTests = function () {
             complete();
         });
     };
+
+    this.testContainerStripes - function (complete) {
+
+        verifyStripes = function (listView) {
+            // Check correctness in each group
+            var groups = [].slice.call(listView.element.querySelectorAll(".win-itemscontainer"));
+            groups.forEach(function (group) {
+                var containers = [].slice.call(group.querySelectorAll(".win-container"));
+
+                // Verify containers have the right class
+                containers.forEach(function (container, index) {
+                    if (index % 2 === 0) {
+                        LiveUnit.Assert.isTrue(WinJS.Utilities.hasClass(container, "win-container-even"), "Container with index: " + index + " doesn't have even class!!")
+                    } else {
+                        LiveUnit.Assert.isTrue(WinJS.Utilities.hasClass(container, "win-container-odd"), "Container with index: " + index + " doesn't have odd class!!")
+                    }
+                });
+            });
+        };
+
+        // grouped
+        // non grouped
+        // list layout
+        // grid layout
+
+    }
 };
 
 // register the object as a test class by passing in the name
