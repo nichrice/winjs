@@ -136,7 +136,7 @@ module WinJSTests {
             }
 
             // Only do this in the structural node case until we can support both.
-            verifyContatinerStripesByIndex(listView);
+            verifyContainerStripesByIndex(listView);
         }
     }
 
@@ -244,7 +244,7 @@ module WinJSTests {
             });
         } else {
             // Only do this in the structural node case until we can support both.
-            verifyContatinerStripesByIndex(listView);
+            verifyContainerStripesByIndex(listView);
         }
 
         var prevElement = listView.element.querySelector("._win-proxy");
@@ -560,7 +560,7 @@ module WinJSTests {
         return items;
     }
 
-    function verifyContatinerStripesByIndex(listView) {
+    function verifyContainerStripesByIndex(listView) {
         // Check correctness in each group
         var groups = [].slice.call(listView.element.querySelectorAll(".win-itemscontainer"));
         groups.forEach(function (group) {
@@ -580,7 +580,6 @@ module WinJSTests {
     function getPairWiseConfigurationsForSmallDataStripeTests() {
 
         var FlowLayout = WinJS.Class.define(function FlowLayout_ctor(blockSize) {
-            //this.initialize = function (site, groups) { };
             this.initialize = function () { },
             this.numberOfItemsPerItemsBlock = blockSize;
         });
@@ -5517,12 +5516,12 @@ module WinJSTests {
                 itemDataSource: dataSources.itemDataSource,
                 groupDataSource: dataSources.groupDataSource,
                 itemTemplate: generateRenderer("100px"),
-                groupHearerTemplate: generateRenderer("50px")
+                groupHeaderTemplate: generateRenderer("50px")
             });
 
             waitForReady(listView, -1)().then(function () {
 
-                verifyContatinerStripesByIndex(listView);
+                verifyContainerStripesByIndex(listView);
                 placeholder.parentNode.removeChild(placeholder);
                 complete();
             });
@@ -5542,7 +5541,7 @@ module WinJSTests {
                 itemDataSource: dataSources.itemDataSource,
                 groupDataSource: dataSources.groupDataSource,
                 itemTemplate: generateRenderer("100px"),
-                groupHearerTemplate: generateRenderer("50px")
+                groupHeaderTemplate: generateRenderer("50px")
             });
 
             var list = (<any>listView.itemDataSource).list;
@@ -5557,7 +5556,7 @@ module WinJSTests {
 
                 return waitForReady(listView, -1)();
             }).then(function () {
-                    verifyContatinerStripesByIndex(listView);
+                    verifyContainerStripesByIndex(listView);
 
                     list.splice(25, 1);
                     list.splice(10, 10);
@@ -5566,7 +5565,7 @@ module WinJSTests {
 
                     return waitForReady(listView, -1)();
                 }).then(function () {
-                    verifyContatinerStripesByIndex(listView);
+                    verifyContainerStripesByIndex(listView);
 
                     list.unshift({
                         title: "N1",
@@ -5587,7 +5586,7 @@ module WinJSTests {
 
                     return waitForReady(listView, -1)();
                 }).then(function () {
-                    verifyContatinerStripesByIndex(listView);
+                    verifyContainerStripesByIndex(listView);
 
                     placeholder.parentNode.removeChild(placeholder);
                     complete();
@@ -5606,15 +5605,9 @@ module WinJSTests {
         generateTestContainerStripesAfterEdits(name, getLayout, getDataSources);
     }
 
-    // Generate stripe tests for small data sets
-    getPairWiseConfigurationsForSmallDataStripeTests().forEach(function (configuration) {
-        generateStripeTests(configuration);
-    });
-
-    // Generate stripe tests for big data sets.
-    getPairWiseConfigurationsForBigDataStripeTests().forEach(function (configuration) {
-        generateStripeTests(configuration);
-    });
+    // Generate stripe tests
+    getPairWiseConfigurationsForSmallDataStripeTests().forEach(generateStripeTests);      
+    getPairWiseConfigurationsForBigDataStripeTests().forEach(generateStripeTests);
 
 }
 // register the object as a test class by passing in the name

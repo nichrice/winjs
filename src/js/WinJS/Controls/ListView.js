@@ -1685,7 +1685,7 @@ define([
                                         //
                                         if (elementInfo.itemBox) {
                                             var itemBox = elementInfo.itemBox,
-                                                oddStripe = _Constants._containerEvenClass,
+                                                oddStripe = _Constants._containerOddClass,
                                                 evenStripe = _Constants._containerEvenClass,
                                                 // Store the even/odd container class from the container the itemBox was in before being removed. 
                                                 // We want to reapply that class on whichever container we use to perform the itemBox's exit animation.
