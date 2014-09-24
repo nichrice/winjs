@@ -336,6 +336,12 @@ module Helper {
 
         export var areFontFamiliesEqual = makeNormalizedCssValueAssertion(LiveUnit.Assert.areEqual.bind(LiveUnit.Assert), "fontFamily");
         export var areFontFamiliesNotEqual = makeNormalizedCssValueAssertion(LiveUnit.Assert.areNotEqual.bind(LiveUnit.Assert), "fontFamily");
+        
+        export function areFloatsEqual(expectedValue, actualValue, message = "", tolerance = 0.1) {
+            var diff = Math.abs(expectedValue - actualValue);
+            LiveUnit.Assert.isTrue(diff < tolerance, message + " (expected = " + expectedValue +
+                ", actual = " + actualValue + ", tolerance = " + tolerance + ")");
+        }
     }
 
     export module Browser {
@@ -520,10 +526,19 @@ module Helper {
     //
     // Example usage: disableTest(WinJSTests.ConfigurationTests, "testDatasourceChange_incrementalGridLayout");
     export function disableTest(testObj, testName) {
+
+        if (!testObj) {
+            return;
+        }
+
         var disabledName = "x" + testName;
 
-        testObj[disabledName] = testObj[testName];
-        delete testObj[testName];
+        if (testObj.hasOwnProperty(testName)) {
+            testObj[disabledName] = testObj[testName];
+            delete testObj[testName];
+        } else {
+            disableTest(Object.getPrototypeOf(testObj), testName);
+        }
     };
 
     // Useful for when you have a large number of configurations but don't want to
@@ -677,6 +692,38 @@ module Helper {
         }
 
         return results;
+    }
+
+    // a helper that allows JSON.stringify to handle recursive links in object graphs
+    export function stringify(obj) {
+        var str;
+        try {
+            var seenObjects = [];
+            str = JSON.stringify(obj, function (key, value) {
+                if (value === window) {
+                    return "[window]";
+                } else if (value instanceof HTMLElement) {
+                    return "[HTMLElement]";
+                } else if (typeof value === "function") {
+                    return "[function]";
+                } else if (typeof value === "object") {
+                    if (value === null) {
+                        return value;
+                    } else if (seenObjects.indexOf(value) === -1) {
+                        seenObjects.push(value);
+                        return value;
+                    } else {
+                        return "[circular]";
+                    }
+                } else {
+                    return value;
+                }
+
+            });
+        } catch (err) {
+            str = JSON.stringify("[object]");
+        }
+        return str;
     }
 
 }

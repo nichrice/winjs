@@ -295,7 +295,10 @@ define([
                 /// <field type="Object" locid="WinJS.UI.AppBarCommand.flyout" helpKeyword="WinJS.UI.AppBarCommand.flyout">
                 /// For flyout-type AppBarCommands, this property returns the WinJS.UI.Flyout that this command invokes.
                 /// When setting this property, you may also use the String ID of the flyout to invoke, the DOM object
-                /// for the flyout, or the WinJS.UI.Flayout object itself.
+                /// for the flyout, or the WinJS.UI.Flyout object itself.
+                /// If the value is set to the String ID of the flyout to invoke, or the DOM object for the flyout, but this
+                /// has not been processed yet, the getter will return the DOM object until it is processed, and
+                /// subsequently return a flyout.
                 /// </field>
                 flyout: {
                     get: function () {
@@ -305,7 +308,7 @@ define([
                             flyout = _Global.document.getElementById(flyout);
                         }
                         // If it doesn't have a .element, then we need to getControl on it
-                        if (flyout && !flyout.element) {
+                        if (flyout && !flyout.element && flyout.winControl) {
                             flyout = flyout.winControl;
                         }
 

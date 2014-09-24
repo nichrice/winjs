@@ -111,7 +111,7 @@
         return true;
     }
 
-    function validateResetFocusState(listView, context, listViewIsEmpty) {
+    function validateResetFocusState(listView, context, listViewIsEmpty = false) {
         var childFocus = listView._tabManager.childFocus;
 
         LiveUnit.Assert.areEqual(0, listView.currentItem.index, "ListView's currentItem wasn't reset " + context);
@@ -126,7 +126,7 @@
     function waitForDeferredAction(listView) {
         if (listView.winControl) { listView = listView.winControl; }
 
-        return function (x) {
+        return function (x?) {
             return new WinJS.Promise(function (complete) {
                 function waitForDeferredAction_handler() {
                     listView.removeEventListener("accessibilityannotationcomplete", waitForDeferredAction_handler, false);
@@ -142,7 +142,7 @@
 
     function waitForReady(listView, delay?) {
         if (listView.winControl) { listView = listView.winControl; }
-        return function (x?) {
+        return function (x?):WinJS.Promise<any> {
             return new WinJS.Promise(function (c, e, p) {
                 function waitForReady_handler() {
                     LiveUnit.LoggingCore.logComment("waitForReady_handler, listView.loadingState:" + listView.loadingState);
@@ -185,7 +185,7 @@
     function waitForState(listView, state, delay) {
         if (listView.winControl) { listView = listView.winControl; }
 
-        return function (x) {
+        return function (x?) {
             return new WinJS.Promise(function (c, e, p) {
                 function waitForReady_handler() {
                     LiveUnit.LoggingCore.logComment("waitForReady_handler: ListView loadingState = " + listView.loadingState);
@@ -280,7 +280,7 @@
         });
     }
 
-    function createAsyncRenderer(templateId, width, height, targetId, delay) {
+    function createAsyncRenderer(templateId, width, height, targetId?, delay?) {
         var templateElement = <HTMLElement>document.getElementById(templateId).cloneNode(true);
         templateElement.id = "";
         var templateText = templateElement.innerHTML;
@@ -313,7 +313,7 @@
         };
     }
 
-    function createRenderer(templateId, targetId) {
+    function createRenderer(templateId, targetId?) {
         var element = <HTMLElement>document.getElementById(templateId).cloneNode(true);
         element.id = "";
         var temp = element.outerHTML;
@@ -482,39 +482,6 @@
                 WinJS.UI._ListViewAnimationHelper[functions[i]] = realAnimationHelper[functions[i]];
             }
         }
-    }
-
-    var lvUnhandledErrors = {};
-
-    function errorEventHandler(evt) {
-        var details = evt.detail;
-        var id = details.id;
-        if (!details.parent) {
-            lvUnhandledErrors[id] = details;
-        } else if (details.handler) {
-            delete lvUnhandledErrors[id];
-        }
-    }
-
-    function initUnhandledErrors() {
-        lvUnhandledErrors = {};
-        WinJS.Promise.addEventListener("error", errorEventHandler);
-    }
-
-    function cleanupUnhandledErrors() {
-        WinJS.Promise.removeEventListener("error", errorEventHandler);
-        lvUnhandledErrors = {};
-    }
-
-    function validateUnhandledErrors() {
-        var currentUnhandledErrors = lvUnhandledErrors;
-        cleanupUnhandledErrors();
-        LiveUnit.Assert.areEqual(0, Object.keys(currentUnhandledErrors).length, "Unhandled errors found");
-    }
-
-    function validateUnhandledErrorsOnIdle() {
-        return WinJS.Utilities.Scheduler.requestDrain(WinJS.Utilities.Scheduler.Priority.idle).
-            then(validateUnhandledErrors.bind(this));
     }
 
     function containerFrom(element) {
