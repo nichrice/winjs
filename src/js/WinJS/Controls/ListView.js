@@ -3959,7 +3959,6 @@ define([
                                 var emptySpotsToFill = Math.min(toAdd, blockSize - lastBlock.items.length);
                                 sizeOfOldLastBlock = lastBlock.items.length;
 
-                                //_SafeHtml.insertAdjacentHTMLUnsafe(lastBlock.element, "beforeend", _Helpers._repeat("<div class='win-container win-backdrop'></div>", toAdd));
                                 var containersMarkup = _Helpers._stripedContainers(emptySpotsToFill, indexOfNextGroupItem);
 
                                 _SafeHtml.insertAdjacentHTMLUnsafe(lastBlock.element, "beforeend", containersMarkup);
@@ -4003,17 +4002,6 @@ define([
                                 indexOfNextGroupItem += sizeOfNewLastBlock;
                                 newBlocksCount++;
                             }
-
-                            //var blocksCount = Math.floor(delta / that._view._blockSize),
-                            //    lastBlockSize = delta % that._view._blockSize;
-
-                            //var blockMarkup = "<div class='win-itemsblock'>" + _Helpers._repeat("<div class='win-container win-backdrop'></div>", that._view._blockSize) + "</div>",
-                            //    markup = _Helpers._repeat(blockMarkup, blocksCount);
-
-                            //if (lastBlockSize) {
-                            //    markup += "<div class='win-itemsblock'>" + _Helpers._repeat("<div class='win-container win-backdrop'></div>", lastBlockSize) + "</div>";
-                            //    blocksCount++;
-                            //}
 
                             var blocksTemp = _Global.document.createElement("div");
                             _SafeHtml.setInnerHTMLUnsafe(blocksTemp, markup);
