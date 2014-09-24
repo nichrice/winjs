@@ -2055,7 +2055,6 @@ define([
                             containersMarkup = _Helpers._stripedContainers(toAdd, itemsContainer.items.length);
 
                         _SafeHtml.insertAdjacentHTMLUnsafe(itemsContainer.element, "beforeend", containersMarkup);
-                        //_SafeHtml.insertAdjacentHTMLUnsafe(itemsContainer.element, "beforeend", _Helpers._repeat("<div class='win-container win-backdrop'></div>", toAdd));
 
                         for (var i = 0; i < toAdd; i++) {
                             var container = children[oldSize + i];

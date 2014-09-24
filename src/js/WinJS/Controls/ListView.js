@@ -3959,7 +3959,6 @@ define([
                                 var emptySpotsToFill = Math.min(toAdd, blockSize - lastBlock.items.length);
                                 sizeOfOldLastBlock = lastBlock.items.length;
 
-                                //_SafeHtml.insertAdjacentHTMLUnsafe(lastBlock.element, "beforeend", _Helpers._repeat("<div class='win-container win-backdrop'></div>", toAdd));
                                 var containersMarkup = _Helpers._stripedContainers(emptySpotsToFill, indexOfNextGroupItem);
 
                                 _SafeHtml.insertAdjacentHTMLUnsafe(lastBlock.element, "beforeend", containersMarkup);
