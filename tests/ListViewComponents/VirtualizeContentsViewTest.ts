@@ -5606,7 +5606,7 @@ module WinJSTests {
     }
 
     // Generate stripe tests
-    getPairWiseConfigurationsForSmallDataStripeTests().forEach(generateStripeTests);      
+    getPairWiseConfigurationsForSmallDataStripeTests().forEach(generateStripeTests);
     getPairWiseConfigurationsForBigDataStripeTests().forEach(generateStripeTests);
 
 }
