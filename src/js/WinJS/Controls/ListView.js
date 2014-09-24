@@ -4004,17 +4004,6 @@ define([
                                 newBlocksCount++;
                             }
 
-                            //var blocksCount = Math.floor(delta / that._view._blockSize),
-                            //    lastBlockSize = delta % that._view._blockSize;
-
-                            //var blockMarkup = "<div class='win-itemsblock'>" + _Helpers._repeat("<div class='win-container win-backdrop'></div>", that._view._blockSize) + "</div>",
-                            //    markup = _Helpers._repeat(blockMarkup, blocksCount);
-
-                            //if (lastBlockSize) {
-                            //    markup += "<div class='win-itemsblock'>" + _Helpers._repeat("<div class='win-container win-backdrop'></div>", lastBlockSize) + "</div>";
-                            //    blocksCount++;
-                            //}
-
                             var blocksTemp = _Global.document.createElement("div");
                             _SafeHtml.setInnerHTMLUnsafe(blocksTemp, markup);
                             var children = blocksTemp.children;
