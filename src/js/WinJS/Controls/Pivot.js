@@ -67,7 +67,7 @@ define([
             };
             var MSManipulationEventStates = _ElementUtilities._MSManipulationEvent;
 
-            var supportsSnap = _ElementUtilities._supportsSnapPoints;
+            var supportsSnap = !!(_ElementUtilities._supportsSnapPoints && _Global.HTMLElement.prototype.msZoomTo);
 
             function _nop() { }
             var headersStates = {

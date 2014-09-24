@@ -24,7 +24,7 @@ WinJSTests.PivotTests = function () {
         initFuncName = "initPointerEvent";
     }
 
-    var supportsSnap = WinJS.Utilities._supportsSnapPoints;
+    var supportsSnap = !!(WinJS.Utilities._supportsSnapPoints && HTMLElement.prototype.msZoomTo);
 
     var pivotWrapperEl;
     this.setUp = function () {
