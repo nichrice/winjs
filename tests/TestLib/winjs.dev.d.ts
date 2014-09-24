@@ -90,6 +90,11 @@ declare module WinJS {
 
         var _MutationObserver;
         function _isSelectionRendered(itemBox): boolean;
+        var _getHighestTabIndexInList;
+        var _getLowestTabIndexInList;
+        var _MSPointerEvent;
+        var _detectSnapPointsSupport;
+        var _supportsZoomTo;
 
     }
 
@@ -372,7 +377,11 @@ declare module WinJS {
 
         class PrivateCommand extends WinJS.UI.AppBarCommand implements ICommand {
             priority: number;
-            winControl: ICommand
+            winControl: ICommand;
+            _commandBarIconButton;
+            _disposed;
+            _tooltipControl;
+            _lastElementFocus;
         }
 
         // Move to WinJS.d.ts after the Toolbar API review
@@ -397,6 +406,113 @@ declare module WinJS {
             type: string;
             priority: number;
             winControl: ICommand
+        }
+
+        class PrivateAppBar extends AppBar {
+            getCommandById(id: string): PrivateCommand;
+            showCommands(commands: any[], immediate?: boolean): void;
+            showCommands(commands: any, immediate?: boolean): void;
+            hideCommands(commands: any[], immediate?: boolean): void;
+            hideCommands(commands: any, immediate?: boolean): void;
+            showOnlyCommands(commands: any[], immediate?: boolean): void;
+            showOnlyCommands(commands: any, immediate?: boolean): void;
+            commands: any[];
+            _disposed;
+            _getCommands;
+            _uniqueId;
+            _updateFirstAndFinalDiv;
+            _layout;
+            _visiblePosition;
+
+            static _currentAppBarId;
+            static _appBarsSynchronizationPromise;
+        }
+
+        class PrivateFlyout extends Flyout {
+            _disposed;
+        }
+
+        class PrivateMenuCommand extends MenuCommand {
+            _disposed;
+        }
+
+        class PrivateMenu extends Menu {
+            _disposed;
+        }
+
+        class PrivateSettingsFlyout extends SettingsFlyout {
+            _disposed;
+        }
+
+        class PrivateNavBar extends NavBar {
+            _disposed;
+        }
+
+        class PrivateNavBarCommand extends NavBarCommand {
+            _buttonEl;
+            _disposed;
+            _splitButtonEl;
+            static _EventName;
+        }
+
+        class PrivateNavBarContainer extends NavBarContainer {
+            _surfaceEl;
+            _measured;
+            _scrollPosition
+            _sizes;
+            _disposed;
+
+            static _EventName;
+        }
+
+        class PrivateHub extends Hub {
+            sections: WinJS.Binding.List<PrivateHubSection>;
+            _viewportElement;
+
+            static _EventName;
+            static _ClassName;
+            static LoadingState;
+            static AnimationType;
+        }
+
+        class PrivateHubSection extends HubSection {
+            _headerContentElement;
+            _setHeaderTemplate;
+            _headerTabStopElement;
+
+            static _ClassName;
+            static _Constants;
+        }
+
+        class PrivateBackButton extends BackButton {
+            static _getReferenceCount(): number;
+        }
+
+        class PrivateRating extends Rating {
+            _ensureTooltips;
+            _toolTips;
+            _disposed;
+        }
+
+        class PrivatePivot extends Pivot {
+
+            _viewportElement;
+            _goNext;
+            _goPrevious;
+            _headersContainerElement;
+            _headersState;
+            forceLayout();
+            _navMode;
+            _currentScrollTargetLocation;
+            _viewportWidth;
+
+            static _ClassName;
+            static _EventName;
+            static _NavigationModes;
+        }
+
+        class PrivatePivotItem extends PivotItem {
+            static _ClassName;
         }
 
         class Toolbar {
@@ -467,6 +583,21 @@ declare module WinJS {
         var _Selection;
         var _LayoutCommon;
         var _LISTVIEW_PROGRESS_DELAY;
+        var _Overlay;
+        var _AppBarCommandsLayout;
+
+        module Pages {
+            function _remove(frag);
+            var _cacheStore;
+        }
+
+        module Fragments {
+            var _cacheStore;
+            function clearCache();
+            var _forceLocal;
+            var _getFragmentContents;
+            var _writeProfilerMark;
+        }
     }
 
     module Binding {
