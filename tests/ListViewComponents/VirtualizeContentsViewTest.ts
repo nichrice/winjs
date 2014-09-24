@@ -599,8 +599,8 @@ module WinJSTests {
         var relevantConfigurations = {
             layoutConfiguration: [
                 // Each test will need its own Layout Object, so expose them through getters.
-                { descriptor: "ListLayout", getter: function () { return { type: new WinJS.UI.ListLayout } } },
-                { descriptor: "GridLayout", getter: function () { return { type: new WinJS.UI.GridLayout } } },
+                { descriptor: "ListLayout", getter: function () { return  new WinJS.UI.ListLayout() } },
+                { descriptor: "GridLayout", getter: function () { return new WinJS.UI.GridLayout() } },
                 { descriptor: "FlowLayout9", getter: function () { return new FlowLayout(9) } }, // 9 items per block to test FlowLayout with odd block size
                 { descriptor: "FlowLayout10", getter: function () { return new FlowLayout(10) } } // 10 items per block to test FlowLayout with even block size
             ],
@@ -633,8 +633,8 @@ module WinJSTests {
         var relevantConfigurations = {
             layoutConfiguration: [
                 // Each test will need its own Layout Object, so expose them through getters.
-                { descriptor: "ListLayout", getter: function () { return { type: new WinJS.UI.ListLayout } } },
-                { descriptor: "GridLayout", getter: function () { return { type: new WinJS.UI.GridLayout } } },
+                { descriptor: "ListLayout", getter: function () { return new WinJS.UI.ListLayout() } },
+                { descriptor: "GridLayout", getter: function () { return new WinJS.UI.GridLayout() } },
             ],
 
             dataConfiguration: [
