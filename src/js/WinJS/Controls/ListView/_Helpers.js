@@ -11,46 +11,20 @@ define([
         return Array.prototype.slice.call(nodeList);
     }
 
-    function repeat(markup, count) {
-        return new Array(count + 1).join(markup);
-    }
-
-    function cycleStrings(stringArray, count) {
-        // Returns the result of continously concatenating each string in the array
+    function repeat(strings, count) {
+        // Continously concatenating a string or set of strings
         // until the specified number of concatenations are made.
         // e.g.
-        //  cycleStrings(["a", "b", "c"], 7) ==> "abcabca"
-        //  cycleStrings(["a", "b", "c"], 2) ==> "ab"
-        //  cycleStrings(["a", "b", "c"], 0) ==> ""
-        //  cycleStrings([], 99) ==> ""
-
-        function recursiveHelper(strings, count) {
-            var numStrings = strings.length;
-            if (numStrings === 1) {
-                // base case
-                return repeat(strings[0], count);
-            } else {
-                var numFullCycles = Math.floor(count / numStrings),
-                    numLeftOvers = count % numStrings,
-                    compressedStrings = [strings.join("")],
-                    result;
-
-                // Make one recursive call with array of size 1 to trigger base case
-                result = recursiveHelper(compressedStrings, numFullCycles);
-
-                // final pass through for leftovers.
-                for (var i = 0; i < numLeftOvers; i++) {
-                    result += strings[i];
-                }
-                return result;
-            }
+        //  repeat("a", 3) ==> "aaa"
+        //  repeat(["a", "b"], 0) ==> ""
+        //  repeat(["a", "b", "c"], 2) ==> "ab"
+        //  repeat(["a", "b", "c"], 7) ==> "abcabca"
+        if (typeof strings === "string") {
+            return repeat([strings], count);
         }
-
-        if (stringArray.length && count > 0) {
-            return recursiveHelper(stringArray, count)
-        } else {
-            return "";
-        }
+        var result = new Array(Math.floor(count / strings.length) + 1).join(strings.join(""));
+        result += strings.slice(0, count % strings.length);
+        return result;
     }
 
     function stripedContainers(count, nextItemIndex) {
@@ -64,14 +38,13 @@ define([
                 "<div class='win-container " + stripes[1] + " win-backdrop'></div>"
         ];
 
-        containersMarkup = cycleStrings(pairOfContainers, count);
+        containersMarkup = repeat(pairOfContainers, count);
         return containersMarkup;
     }
 
     _Base.Namespace._moduleDefine(exports, "WinJS.UI", {
         _nodeListToArray: nodeListToArray,
         _repeat: repeat,
-        _cycleStrings: cycleStrings,
         _stripedContainers: stripedContainers,
         _ListViewAnimationHelper: {
             fadeInElement: function (element) {

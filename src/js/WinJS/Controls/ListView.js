@@ -3982,7 +3982,7 @@ define([
                                 "<div class='win-itemsblock'>" + _Helpers._stripedContainers(blockSize, firstBlockFirstItemIndex) + "</div>",
                                 "<div class='win-itemsblock'>" + _Helpers._stripedContainers(blockSize, secondBlockFirstItemIndex) + "</div>"
                             ];
-                            markup = _Helpers._cycleStrings(pairOfItemBlocks, newBlocksCount);
+                            markup = _Helpers._repeat(pairOfItemBlocks, newBlocksCount);
                             indexOfNextGroupItem += (newBlocksCount * blockSize);
 
                             // 3) Generate and partially fill, one last itemblock if there are any remaining containers to add.
