@@ -4334,7 +4334,7 @@ define([
                             if (_ElementUtilities.hasClass(itemBox, _Constants._selectedClass)) {
                                 _ElementUtilities.addClass(container, _Constants._selectedClass);
                             }
-                            if (modifiedElements._containerStripe = _Constants._containerEvenClass) {
+                            if (modifiedElements._containerStripe === _Constants._containerEvenClass) {
                                 _ElementUtilities.addClass(container, _Constants._containerEvenClass);
                                 _ElementUtilities.removeClass(container, _Constants._containerOddClass);
                             } else {

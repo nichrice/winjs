@@ -598,7 +598,7 @@ module WinJSTests {
         var relevantConfigurations = {
             layoutConfiguration: [
                 // Each test will need its own Layout Object, so expose them through getters.
-                { descriptor: "ListLayout", getter: function () { return  new WinJS.UI.ListLayout() } },
+                { descriptor: "ListLayout", getter: function () { return new WinJS.UI.ListLayout() } },
                 { descriptor: "GridLayout", getter: function () { return new WinJS.UI.GridLayout() } },
                 { descriptor: "FlowLayout9", getter: function () { return new FlowLayout(9) } }, // 9 items per block to test FlowLayout with odd block size
                 { descriptor: "FlowLayout10", getter: function () { return new FlowLayout(10) } } // 10 items per block to test FlowLayout with even block size
@@ -5519,7 +5519,7 @@ module WinJSTests {
                 groupHeaderTemplate: generateRenderer("50px")
             });
 
-            waitForReady(listView, -1)().then(function () {
+            waitForAllContainers(listView).then(function () {
 
                 verifyContainerStripesByIndex(listView);
                 placeholder.parentNode.removeChild(placeholder);
@@ -5536,7 +5536,9 @@ module WinJSTests {
 
             var placeholder = createListViewElement();
 
-            var listView = new WinJS.UI.ListView(placeholder, {
+            var ListView = <typeof WinJS.UI.PrivateListView> WinJS.UI.ListView;
+
+            var listView = new ListView(placeholder, {
                 layout: layout,
                 itemDataSource: dataSources.itemDataSource,
                 groupDataSource: dataSources.groupDataSource,
@@ -5544,17 +5546,17 @@ module WinJSTests {
                 groupHeaderTemplate: generateRenderer("50px")
             });
 
-            var list = (<any>listView.itemDataSource).list;
+            var list = listView.itemDataSource.list;
 
             LiveUnit.Assert.isTrue(list.length >= 100, "Test requires a data set of 100 or more items");
 
-            return waitForReady(listView, -1)().then(function () {
+            return waitForAllContainers(listView).then(function () {
 
                 list.move(0, 10);
                 list.move(70, 9);
-                list.move (4, 3);
+                list.move(4, 3);
 
-                return waitForReady(listView, -1)();
+                return waitForAllContainers(listView);
             }).then(function () {
                     verifyContainerStripesByIndex(listView);
 
@@ -5563,7 +5565,7 @@ module WinJSTests {
                     list.shift();
                     list.pop();
 
-                    return waitForReady(listView, -1)();
+                    return waitForAllContainers(listView);
                 }).then(function () {
                     verifyContainerStripesByIndex(listView);
 
@@ -5584,7 +5586,7 @@ module WinJSTests {
                         group: 2,
                     });
 
-                    return waitForReady(listView, -1)();
+                    return waitForAllContainers(listView);
                 }).then(function () {
                     verifyContainerStripesByIndex(listView);
 
