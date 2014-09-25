@@ -216,23 +216,6 @@ define([
                 }
             });
 
-            function checkStripes() {
-                // Check correctness in each group
-                var groups = [].slice.call(listView.element.querySelectorAll(".win-itemscontainer"));
-                groups.forEach(function (group) {
-                    var containers = [].slice.call(group.querySelectorAll(".win-container"));
-
-                    // Verify containers have the right class
-                    containers.forEach(function (container, index) {
-                        if (index % 2 === 0) {
-                            LiveUnit.Assert.isTrue(WinJS.Utilities.hasClass(container, "win-container-even"), "Container with index: " + index + " doesn't have even class!!")
-                        } else {
-                            LiveUnit.Assert.isTrue(WinJS.Utilities.hasClass(container, "win-container-odd"), "Container with index: " + index + " doesn't have odd class!!")
-                        }
-                    });
-                });
-            }
-
             var ListView = _Base.Class.define(function ListView_ctor(element, options) {
                 /// <signature helpKeyword="WinJS.UI.ListView.ListView">
                 /// <summary locid="WinJS.UI.ListView.constructor">
@@ -340,8 +323,6 @@ define([
                 this._runningInit = false;
 
                 this._batchViewUpdates(_Constants._ViewChange.rebuild, _Constants._ScrollToPriority.medium, 0);
-
-                this.addEventListener("loadingstatechanged", checkStripes(this), false);
                 this._writeProfilerMark("constructor,StopTM");
             }, {
                 // Public properties
@@ -3991,42 +3972,28 @@ define([
                             }
                             indexOfNextGroupItem = blocks.length * blockSize;
 
-                            // 2) Generate as many full itemblocks of containers as we can.                        
-                            var newBlocksCount = Math.floor(toAdd / blockSize),
-                                markup = "",
-                                firstBlockFirstItemIndex = indexOfNextGroupItem,
-                                secondBlockFirstItemIndex = indexOfNextGroupItem + blockSize;
+                            // 2) Generate as many complete itemblocks of containers as we can.
+                            var newBlocksCount = Math.floor(toAdd / blockSize);
+                            var markup = "";
 
-                            var pairOfItemBlocks = [
-                                // Use pairs to ensure that the container striping pattern is maintained regardless if blockSize is even or odd.
-                                "<div class='win-itemsblock'>" + _Helpers._stripedContainers(blockSize, firstBlockFirstItemIndex) + "</div>",
-                                "<div class='win-itemsblock'>" + _Helpers._stripedContainers(blockSize, secondBlockFirstItemIndex) + "</div>"
-                            ];
-                            markup = _Helpers._cycleStrings(pairOfItemBlocks, newBlocksCount);
-                            indexOfNextGroupItem += (newBlocksCount * blockSize);
+                            var numBlockTuples = Math.floor(newBlocksCount / 2);
+                            if (numBlockTuples) {
+                                // If we have at least 2 full itemblocks worth of containers to add, generate blocks markup as tuples.
+                                // This will ensure the container striping pattern is maintained regardless if blockSize is even or odd.
+                                var firstBlockFirstItemIndex = indexOfNextGroupItem,
+                                    secondBlockFirstItemIndex = indexOfNextGroupItem + blockSize,
+                                    blockTupleMarkup =
+                                    "<div class='win-itemsblock'>" + _Helpers._stripedContainers(blockSize, firstBlockFirstItemIndex) + "</div>" +
+                                    "<div class='win-itemsblock'>" + _Helpers._stripedContainers(blockSize, secondBlockFirstItemIndex) + "</div>";
 
-                            //// 2) Generate as many complete itemblocks of containers as we can.
-                            //var newBlocksCount = Math.floor(toAdd / blockSize);
-                            //var markup = "";
-
-                            //var numBlockTuples = Math.floor(newBlocksCount / 2);
-                            //if (numBlockTuples) {
-                            //    // If we have at least 2 full itemblocks worth of containers to add, generate blocks markup as tuples.
-                            //    // This will ensure the container striping pattern is maintained regardless if blockSize is even or odd.
-                            //    var firstBlockFirstItemIndex = indexOfNextGroupItem,
-                            //        secondBlockFirstItemIndex = indexOfNextGroupItem + blockSize,
-                            //        blockTupleMarkup =
-                            //        "<div class='win-itemsblock'>" + _Helpers._stripedContainers(blockSize, firstBlockFirstItemIndex) + "</div>" +
-                            //        "<div class='win-itemsblock'>" + _Helpers._stripedContainers(blockSize, secondBlockFirstItemIndex) + "</div>";
-
-                            //    markup += _Helpers._repeat(blockTupleMarkup, numBlockTuples);
-                            //    indexOfNextGroupItem += numBlockTuples * 2;
-                            //}
-                            //if (newBlocksCount % 2 !== 0) {
-                            //    // One singular itemsblock remains after finishing tuples.                            
-                            //    markup += "<div class='win-itemsblock'>" + _Helpers._stripedContainers(blockSize, indexOfNextGroupItem) + "</div>";
-                            //    indexOfNextGroupItem += blockSize;
-                            //}
+                                markup += _Helpers._repeat(blockTupleMarkup, numBlockTuples);
+                                indexOfNextGroupItem += numBlockTuples * 2;
+                            }
+                            if (newBlocksCount % 2 !== 0) {
+                                // One singular itemsblock remains after finishing tuples.                            
+                                markup += "<div class='win-itemsblock'>" + _Helpers._stripedContainers(blockSize, indexOfNextGroupItem) + "</div>";
+                                indexOfNextGroupItem += blockSize;
+                            }
 
                             // 3) Generate and partially fill, one last itemblock if there are any remaining containers to add.
                             var sizeOfNewLastBlock = toAdd % blockSize;
