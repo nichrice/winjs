@@ -407,8 +407,8 @@
                 verboseLog += "\n" + message;
             },
 
-            printLog: function () {
-                console.log(verboseLog);
+            getVerboseLog: function () {
+                return verboseLog;
             },
         },
 
