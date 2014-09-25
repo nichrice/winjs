@@ -54,19 +54,18 @@ define([
     }
 
     function stripedContainers(count, nextItemIndex) {
-        if (count > 0) {
-            var containersMarkup = "",
-                evenStripe = _Constants._containerEvenClass,
-                oddStripe = _Constants._containerOddClass,
-                stripes = nextItemIndex % 2 === 0 ? [evenStripe, oddStripe] : [oddStripe, evenStripe];
+        var containersMarkup,
+            evenStripe = _Constants._containerEvenClass,
+            oddStripe = _Constants._containerOddClass,
+            stripes = nextItemIndex % 2 === 0 ? [evenStripe, oddStripe] : [oddStripe, evenStripe];
 
-            var pairOfContainers = [
+        var pairOfContainers = [
                 "<div class='win-container " + stripes[0] + " win-backdrop'></div>",
                 "<div class='win-container " + stripes[1] + " win-backdrop'></div>"
-            ];
+        ];
 
-            return cycleStrings(pairOfContainers, count);
-        }
+        containersMarkup = cycleStrings(pairOfContainers, count);
+        return containersMarkup;
     }
 
     _Base.Namespace._moduleDefine(exports, "WinJS.UI", {
