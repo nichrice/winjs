@@ -3,7 +3,7 @@
 // <reference path="ms-appx://$(TargetFramework)/js/ui.js" />
 // <reference path="ms-appx://$(TargetFramework)/js/en-us/ui.strings.js" />
 // <reference path="ms-appx://$(TargetFramework)/css/ui-dark.css" />
-/// <reference path="../TestLib/ListViewHelpers.ts" />
+/// <reference path="../TestLib/Helper.ListView.ts" />
 /// <reference path="../TestLib/TestDataSource.ts"/>
 // <reference path="../TestData/ListView.less.css" />
 
@@ -84,7 +84,7 @@ module WinJSTests {
             setNotificationHandler: true
         };
 
-        return TestComponents.createTestDataSource(data, controller, abilities);
+        return Helper.ItemsManager.createTestDataSource(data, controller, abilities);
     }
 
     function testLayout(layoutName) {
@@ -94,8 +94,8 @@ module WinJSTests {
             listView1 = new ListView(placeholder1, { layout: { type: expectedLayout } }),
             listView2 = new ListView(placeholder2, { layout: new expectedLayout() });
 
-        validateListView(listView1);
-        validateListView(listView2);
+        Helper.ListView.validateListView(listView1);
+        Helper.ListView.validateListView(listView2);
         LiveUnit.Assert.isTrue(listView1.layout instanceof expectedLayout);
         LiveUnit.Assert.isTrue(listView2.layout instanceof expectedLayout);
         LiveUnit.Assert.isTrue(listView1._horizontal() === (layoutName.indexOf("GridLayout") == 0));
@@ -119,7 +119,7 @@ module WinJSTests {
             "<div id='test2' style='width:600px;height:400px;'></div>";
             testRootEl.appendChild(newNode);
             document.body.appendChild(testRootEl);
-            removeListviewAnimations();
+            Helper.ListView.removeListviewAnimations();
         }
 
         tearDown() {
@@ -127,7 +127,7 @@ module WinJSTests {
 
             WinJS.Utilities.disposeSubTree(testRootEl);
             document.body.removeChild(testRootEl);
-            restoreListviewAnimations();
+            Helper.ListView.restoreListviewAnimations();
         }
 
         // Test listView initialization with an invalid element like H1
@@ -153,7 +153,7 @@ module WinJSTests {
 
             var testElement = document.getElementById("test1"),
                 listView = new WinJS.UI.ListView(testElement),
-                defaults = defaultOptions();
+                defaults = Helper.ListView.defaultOptions();
 
             LiveUnit.Assert.isTrue(listView.layout instanceof WinJS.UI.GridLayout);
             for (var param in defaults) {
@@ -178,13 +178,13 @@ module WinJSTests {
             var element = document.getElementById("test1"),
                 listView = new WinJS.UI.ListView(element, {
                     itemDataSource: groupBl.dataSource,
-                    itemTemplate: templates.syncJSTemplate,
+                    itemTemplate: Helper.ListView.templates.syncJSTemplate,
                     groupDataSource: groupBl.groups.dataSource,
-                    groupHeaderTemplate: templates.syncJSTemplate,
+                    groupHeaderTemplate: Helper.ListView.templates.syncJSTemplate,
                     layout: new WinJS.UI.ListLayout()
                 });
 
-            waitForReady(listView)().
+            Helper.ListView.waitForReady(listView)().
                 then(function () {
                     LiveUnit.Assert.areEqual(1, updateLayoutCalledCount, "ListView_updateLayout should be called only once when a layout is passed it the constructor options");
                     ListView.prototype._updateLayout = oldUpdateLayout;
@@ -202,17 +202,17 @@ module WinJSTests {
                     var element = document.getElementById("test1"),
                         listView = new WinJS.UI.ListView(element, {
                             itemDataSource: gids,
-                            itemTemplate: templates.syncJSTemplate,
+                            itemTemplate: Helper.ListView.templates.syncJSTemplate,
                             groupDataSource: gds,
-                            groupHeaderTemplate: templates.syncJSTemplate,
+                            groupHeaderTemplate: Helper.ListView.templates.syncJSTemplate,
                             layout: layout
                         });
 
-                    waitForReady(listView)().
+                    Helper.ListView.waitForReady(listView)().
                         then(function () {
                             action();
                         }).
-                        then(waitForReady(listView)).
+                        then(Helper.ListView.waitForReady(listView)).
                         done(complete, function (er) {
                             throw er;
                         });
@@ -294,10 +294,10 @@ module WinJSTests {
         InitializationTests.prototype["testWithoutElement" + (layoutName == "GridLayout" ? "" : layoutName)] = function (complete) {
             function checkTile(listview, index, left, top) {
                 var tile = listview.elementFromIndex(index),
-                    container = containerFrom(tile);
+                    container = Helper.ListView.containerFrom(tile);
                 LiveUnit.Assert.areEqual("Tile" + index, tile.textContent);
-                LiveUnit.Assert.areEqual(left, offsetLeftFromSurface(listview, container));
-                LiveUnit.Assert.areEqual(top, offsetTopFromSurface(listview, container));
+                LiveUnit.Assert.areEqual(left, Helper.ListView.offsetLeftFromSurface(listview, container));
+                LiveUnit.Assert.areEqual(top, Helper.ListView.offsetTopFromSurface(listview, container));
             }
 
             var data = [];
@@ -325,7 +325,7 @@ module WinJSTests {
             listView.element.style.height = "300px";
             testRootEl.appendChild(listView.element);
 
-            runTests(listView, [
+            Helper.ListView.runTests(listView, [
                 function () {
                     checkTile(listView, 0, 0, 0);
                     checkTile(listView, 1, 0, 100);
@@ -348,7 +348,7 @@ module WinJSTests {
             var testElement = document.getElementById("test1"),
                 listView = new WinJS.UI.ListView(testElement, { layout: new WinJS.UI[layoutName](), itemDataSource: new WinJS.Binding.List().dataSource });
 
-            validateListView(listView);
+            Helper.ListView.validateListView(listView);
             complete();
         };
     };
@@ -417,7 +417,7 @@ module WinJSTests {
                 handlerCount++;
             };
 
-            runTests(listView, [
+            Helper.ListView.runTests(listView, [
                 function () {
                     listView.selection.set([0]);
                     LiveUnit.Assert.areEqual(2, handlerCount);
@@ -576,7 +576,7 @@ module WinJSTests {
                 return new WinJS.UI.ListDataSource(dataSource);
             }
 
-            initUnhandledErrors();
+            Helper.initUnhandledErrors();
 
             var element = document.createElement("div");
             element.style.width = "300px";
@@ -592,8 +592,8 @@ module WinJSTests {
                     }
                     listView.itemDataSource = (new WinJS.Binding.List(myData)).dataSource;
                 }).
-                then(waitForReady(listView, 100)).
-                then(validateUnhandledErrorsOnIdle).
+                then(Helper.ListView.waitForReady(listView, 100)).
+                then(Helper.validateUnhandledErrorsOnIdle).
                 done(function () {
                     element.parentNode.removeChild(element);
                     complete();

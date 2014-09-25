@@ -3,7 +3,7 @@
 // <reference path="ms-appx://$(TargetFramework)/js/ui.js" />
 // <reference path="ms-appx://$(TargetFramework)/js/en-us/ui.strings.js" />
 // <reference path="ms-appx://$(TargetFramework)/css/ui-dark.css" />
-/// <reference path="../TestLib/ListViewHelpers.ts" />
+/// <reference path="../TestLib/Helper.ListView.ts" />
 /// <deploy src="../TestData/" />
 
 module WinJSTests {
@@ -59,10 +59,10 @@ module WinJSTests {
         var list = listView.itemDataSource.list;
         for (var i = 0; i < list.length; i++) {
             var element = listView.elementFromIndex(i),
-                container = containerFrom(element);
+                container = Helper.ListView.containerFrom(element);
             LiveUnit.Assert.areEqual(list.getItem(i).data.itemInfo, element.textContent);
-            LiveUnit.Assert.areEqual(i * 50, offsetTopFromSurface(listView, container));
-            LiveUnit.Assert.areEqual(0, offsetLeftFromSurface(listView, container));
+            LiveUnit.Assert.areEqual(i * 50, Helper.ListView.offsetTopFromSurface(listView, container));
+            LiveUnit.Assert.areEqual(0, Helper.ListView.offsetLeftFromSurface(listView, container));
         }
     }
 
@@ -76,14 +76,14 @@ module WinJSTests {
         }
         for (var i = 0; i < list.length; i++) {
             var element = listView.elementFromIndex(i),
-                container = containerFrom(element);
+                container = Helper.ListView.containerFrom(element);
             LiveUnit.Assert.areEqual(list.getItem(i).data.itemInfo, element.textContent);
             var expectedLeft = col * 50;
             if (rtl) {
                 expectedLeft = listView._canvas.offsetWidth - expectedLeft - container.offsetWidth;
             }
-            LiveUnit.Assert.areEqual(row * 50, offsetTopFromSurface(listView, container));
-            LiveUnit.Assert.areEqual(expectedLeft, offsetLeftFromSurface(listView, container));
+            LiveUnit.Assert.areEqual(row * 50, Helper.ListView.offsetTopFromSurface(listView, container));
+            LiveUnit.Assert.areEqual(expectedLeft, Helper.ListView.offsetLeftFromSurface(listView, container));
             row++;
             row = row % expectedRows;
             if (row == 0) {
@@ -277,7 +277,7 @@ module WinJSTests {
                 }
             ];
 
-            runTests(listView, tests);
+            Helper.ListView.runTests(listView, tests);
         };
     };
 
@@ -437,7 +437,7 @@ module WinJSTests {
                 }
             ];
 
-            runTests(listView, tests);
+            Helper.ListView.runTests(listView, tests);
         };
     };
     generateAnimationEventsWithAnimationsDisabled("GridLayout");

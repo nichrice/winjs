@@ -3,9 +3,8 @@
 // <reference path="ms-appx://$(TargetFramework)/js/ui.js" />
 // <reference path="ms-appx://$(TargetFramework)/js/en-us/ui.strings.js" />
 /// <reference path="../TestLib/TestDataSource.ts" />
-/// <reference path="../TestLib/UnitTestsCommon.ts" />
-/// <reference path="../TestLib/LegacyLiveUnit/CommonUtils.ts"/>
-/// <reference path="../TestLib/util.ts" />
+/// <reference path="../TestLib/Helper.ItemsManager.ts" />
+/// <reference path="../TestLib/Helper.ts"/>
 /// <reference path="FlipperHelpers.ts" />
 /// <deploy src="../TestData/" />
 
@@ -14,7 +13,7 @@ module WinJSTests {
     "use strict"
 
     var COUNT = 2;
-    var commonUtils = CommonUtilities;
+    var commonUtils = Helper;
 
     function mouseTest(element, flipView, rawData, complete) {
         function isButtonVisible(button) {

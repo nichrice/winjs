@@ -3,7 +3,7 @@
 // <reference path="ms-appx://$(TargetFramework)/js/ui.js" />
 // <reference path="ms-appx://$(TargetFramework)/js/en-us/ui.strings.js" />
 // <reference path="ms-appx://$(TargetFramework)/css/ui-dark.css" />
-/// <reference path="../TestLib/util.ts" />
+/// <reference path="../TestLib/Helper.ts" />
 /// <reference path="HubUtils.ts" />
 // <reference path="HubUtils.css" />
 
@@ -304,7 +304,7 @@ module HubTests {
                 }
 
                 //loop
-                return asyncWhile(continueCondition, loop);
+                return Helper.asyncWhile(continueCondition, loop);
             });
     }
 
@@ -335,7 +335,7 @@ module HubTests {
                 function continueCondition() {
                     return WinJS.Promise.wrap(currentScrollPosition < scrollRange.max);
                 }
-                return asyncWhile(continueCondition, loop);
+                return Helper.asyncWhile(continueCondition, loop);
             });
     }
 
@@ -364,7 +364,7 @@ module HubTests {
                 function continueCondition() {
                     return WinJS.Promise.wrap(currentScrollPosition < scrollRange.max);
                 }
-                return asyncWhile(continueCondition, loop);
+                return Helper.asyncWhile(continueCondition, loop);
             });
     }
 

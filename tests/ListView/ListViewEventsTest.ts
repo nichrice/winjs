@@ -3,7 +3,7 @@
 // <reference path="ms-appx://$(TargetFramework)/js/ui.js" />
 // <reference path="ms-appx://$(TargetFramework)/js/en-us/ui.strings.js" />
 // <reference path="ms-appx://$(TargetFramework)/css/ui-dark.css" />
-/// <reference path="../TestLib/ListViewHelpers.ts" />
+/// <reference path="../TestLib/Helper.ListView.ts" />
 /// <deploy src="../TestData/" />
 
 module WinJSTests {
@@ -162,7 +162,7 @@ module WinJSTests {
             listView._currentMode().onclick();
         }];
 
-        runTests(listView, tests);
+        Helper.ListView.runTests(listView, tests);
     };
     generate('iteminvoked', "GridLayout", iteminvoked, { size: "50px" });
 
@@ -175,7 +175,7 @@ module WinJSTests {
             listView.selection.set([0]);
         }];
 
-        runTests(listView, tests);
+        Helper.ListView.runTests(listView, tests);
     };
     generate('selectionchanging', "GridLayout", selectionchanging);
 
@@ -189,7 +189,7 @@ module WinJSTests {
             listView.selection.set([0]);
         }];
 
-        runTests(listView, tests);
+        Helper.ListView.runTests(listView, tests);
     };
     generate('selectionchanged', "GridLayout", selectionchanged);
 
@@ -211,7 +211,7 @@ module WinJSTests {
             listView._currentMode().onKeyDown(createKeyEvent(WinJS.Utilities.Key.downArrow, elements[0]));
         }];
 
-        runTests(listView, tests);
+        Helper.ListView.runTests(listView, tests);
     };
     generate('keyboardnavigating', "GridLayout", keyboardnavigating);
 

@@ -7,7 +7,7 @@
 ///<reference path="../TestLib/liveToQ/liveToQ.d.ts" />
 ///<reference path="../TestLib/winjs.dev.d.ts" />
 /// <reference path="../TestLib/TestDataSource.ts" />
-/// <reference path="../TestLib/UnitTestsCommon.ts" />
+/// <reference path="../TestLib/Helper.ItemsManager.ts" />
 
 module CorsicaTests {
 
@@ -2120,7 +2120,7 @@ module CorsicaTests {
                 sampleDataSource.push({ title: t, description: d });
             }
 
-            window['DataSource'] = TestComponents.simpleSynchronousArrayDataSource(sampleDataSource);
+            window['DataSource'] = Helper.ItemsManager.simpleSynchronousArrayDataSource(sampleDataSource);
 
             WinJS.UI.processAll().
                 then(function () {
@@ -2178,7 +2178,7 @@ module CorsicaTests {
                 sampleDataSource.push({ title: t, description: d });
             }
 
-            window['DataSource'] = TestComponents.simpleSynchronousArrayDataSource(sampleDataSource);
+            window['DataSource'] = Helper.ItemsManager.simpleSynchronousArrayDataSource(sampleDataSource);
 
             WinJS.UI.processAll().
                 then(function () {

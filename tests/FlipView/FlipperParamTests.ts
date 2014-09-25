@@ -2,7 +2,7 @@
 // <reference path="ms-appx://$(TargetFramework)/js/base.js" />
 // <reference path="ms-appx://$(TargetFramework)/js/ui.js" />
 // <reference path="ms-appx://$(TargetFramework)/css/ui-dark.css" />
-/// <reference path="../TestLib/LegacyLiveUnit/CommonUtils.ts"/>
+/// <reference path="../TestLib/Helper.ts"/>
 /// <reference path="FlipperUtils.ts"/>
 /// <reference path="../TestLib/TestDataSource.ts"/>
 
@@ -12,7 +12,7 @@ module WinJSTests {
 
     // Create ParamTests object
     export class ParamTests {
-        
+
 
         //
         // Function: SetUp
@@ -20,7 +20,7 @@ module WinJSTests {
         //
         setUp() {
             LiveUnit.LoggingCore.logComment("In setup");
-            CommonUtilities.getIEInfo();
+            Helper.getIEInfo();
             FlipperUtils.addFlipperDom();
         }
 
@@ -158,13 +158,13 @@ module WinJSTests {
                 }
             };
             // All abilities are enabled
-            var itemDataSource = TestComponents.createTestDataSource(data, controller, null);
+            var itemDataSource = Helper.ItemsManager.createTestDataSource(data, controller, null);
             itemDataSource.testDataAdapter.directives = directives;
             return itemDataSource;
         }
     }
 
-    
+
 }
 
 // Register the object as a test class by passing in the name

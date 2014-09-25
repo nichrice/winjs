@@ -1,5 +1,5 @@
 // Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved. Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
-///<reference path="../TestLib/listviewutils.ts" />
+///<reference path="../TestLib/Helper.ListView.Utils.ts" />
 
 
 
@@ -9,8 +9,8 @@ module ListViewVerify {
     // ---------------------------------------------------------------------------------------------------------
     // Private Functions & Variables
     // ---------------------------------------------------------------------------------------------------------
-    var lvUtils = ListViewUtils;
-    var commonUtils = CommonUtilities;
+    var lvUtils = Helper.ListView.Utils;
+    var commonUtils = Helper;
 
     // ---------------------------------------------------------------------------------------------------------
     // Public Functions
@@ -91,7 +91,7 @@ module ListViewVerify {
                 } else {
                     verifyParam = (param === "groupHeaderPosition") ? listview.layout[param] : listview[param];
                 }
-                if (!utilities.isPhone || (param !== "selectionMode" && expectedOptions[param] !== "single")) {
+                if (!WinJS.Utilities.isPhone || (param !== "selectionMode" && expectedOptions[param] !== "single")) {
                     LiveUnit.Assert.areEqual(expectedOptions[param], verifyParam, "Expected parameter of " + param + ": " + expectedOptions[param] + " Actual: " + verifyParam);
                 }
                 if (noLoggingParams.indexOf(param) === -1) {

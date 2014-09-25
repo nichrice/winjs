@@ -3,8 +3,8 @@
 // <reference path="ms-appx://$(TargetFramework)/js/ui.js" />
 // <reference path="ms-appx://$(TargetFramework)/js/en-us/ui.strings.js" />
 /// <reference path="../TestLib/TestDataSource.ts" />
-/// <reference path="../TestLib/UnitTestsCommon.ts" />
-/// <reference path="../TestLib/ListViewHelpers.ts" />
+/// <reference path="../TestLib/Helper.ItemsManager.ts" />
+/// <reference path="../TestLib/Helper.ListView.ts" />
 
 module WinJSTests {
     "use strict";
@@ -2266,7 +2266,7 @@ module WinJSTests {
             var list = new WinJS.Binding.List([1, 2, 3]);
             var lv = new WinJS.UI.ListView(div);
             lv.itemDataSource = list.dataSource;
-            waitForReady(lv)()
+            Helper.ListView.waitForReady(lv)()
                 .then(function () {
                     LiveUnit.Assert.areEqual(3, div.querySelectorAll(".win-container").length);
                 })
