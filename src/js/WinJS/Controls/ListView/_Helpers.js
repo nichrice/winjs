@@ -13,7 +13,7 @@ define([
 
     function repeat(markup, count) {
         return new Array(count + 1).join(markup);
-    }    
+    }
 
     function cycleStrings(stringArray, count) {
         // Returns the result of continously concatenating each string in the array
@@ -26,10 +26,9 @@ define([
 
         function recursiveHelper(strings, count) {
             var numStrings = strings.length;
-
             if (numStrings === 1) {
                 // base case
-                return new Array(count + 1).join(strings[0]);
+                return repeat(strings[0], count);
             } else {
                 var numFullCycles = Math.floor(count / numStrings),
                     numLeftOvers = count % numStrings,
@@ -43,7 +42,6 @@ define([
                 for (var i = 0; i < numLeftOvers; i++) {
                     result += strings[i];
                 }
-
                 return result;
             }
         }
