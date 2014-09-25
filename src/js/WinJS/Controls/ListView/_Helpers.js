@@ -23,7 +23,7 @@ define([
             return repeat([strings], count);
         }
         var result = new Array(Math.floor(count / strings.length) + 1).join(strings.join(""));
-        result += strings.slice(0, count % strings.length);
+        result += strings.slice(0, count % strings.length).join("");
         return result;
     }
 
