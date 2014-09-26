@@ -12,7 +12,7 @@ define([
     }
 
     function repeat(strings, count) {
-        // Continously concatenating a string or set of strings
+        // Continously concatenate a string or set of strings
         // until the specified number of concatenations are made.
         // e.g.
         //  repeat("a", 3) ==> "aaa"
