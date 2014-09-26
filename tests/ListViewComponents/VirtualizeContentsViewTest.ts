@@ -560,7 +560,8 @@ module WinJSTests {
         return items;
     }
 
-    function verifyContainerStripesByIndex(listView) {
+    function verifyContainerStripesByIndex(listView) {        
+
         // Check correctness in each group
         var groups = [].slice.call(listView.element.querySelectorAll(".win-itemscontainer"));
         groups.forEach(function (group) {
@@ -5519,7 +5520,7 @@ module WinJSTests {
                 groupHeaderTemplate: generateRenderer("50px")
             });
 
-            waitForAllContainers(listView).then(function () {
+            Helper.ListView.waitForAllContainers(listView).then(function () {
 
                 verifyContainerStripesByIndex(listView);
                 placeholder.parentNode.removeChild(placeholder);
@@ -5530,8 +5531,11 @@ module WinJSTests {
 
     function generateTestContainerStripesAfterEdits(name, getLayout, getDataSources) {
 
+        var layout = getLayout();
+        if (layout['_usingStructuralNodes']) { return; } //TODO Remove this check once we have edits support for item striping without structural nodes.
+
         VirtualizedViewTests.prototype["testContainerStripesAfterEdits" + name] = function (complete) {
-            var layout = getLayout();
+           
             var dataSources = getDataSources();
 
             var placeholder = createListViewElement();
@@ -5550,22 +5554,22 @@ module WinJSTests {
 
             LiveUnit.Assert.isTrue(list.length >= 100, "Test requires a data set of 100 or more items");
 
-            return waitForAllContainers(listView).then(function () {
+            return Helper.ListView.waitForAllContainers(listView).then(function () {
 
                 list.move(0, 10);
                 list.move(70, 9);
                 list.move(4, 3);
 
-                return waitForAllContainers(listView);
+                return Helper.ListView.waitForAllContainers(listView);
             }).then(function () {
                     verifyContainerStripesByIndex(listView);
 
                     list.splice(25, 1);
-                    list.splice(10, 10);
+                    list.splice(10, 12);
                     list.shift();
                     list.pop();
 
-                    return waitForAllContainers(listView);
+                return Helper.ListView.waitForAllContainers(listView);
                 }).then(function () {
                     verifyContainerStripesByIndex(listView);
 
@@ -5586,8 +5590,13 @@ module WinJSTests {
                         group: 2,
                     });
 
-                    return waitForAllContainers(listView);
+                    initData(25).forEach(function (datum) {
+                        list.splice(33, 0, datum);
+                    });
+
+                    return Helper.ListView.waitForAllContainers(listView);
                 }).then(function () {
+
                     verifyContainerStripesByIndex(listView);
 
                     placeholder.parentNode.removeChild(placeholder);
