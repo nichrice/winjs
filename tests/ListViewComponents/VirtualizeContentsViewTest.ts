@@ -5532,7 +5532,7 @@ module WinJSTests {
     function generateTestContainerStripesAfterEdits(name, getLayout, getDataSources) {
 
         var layout = getLayout();
-        if (layout['_usingStructuralNodes']) { return; } //TODO Remove this check once we have edits support for item striping without structural nodes.
+        if (!layout['_usingStructuralNodes']) { return; } //TODO Remove this check once we have edits support for item striping without structural nodes.
 
         VirtualizedViewTests.prototype["testContainerStripesAfterEdits" + name] = function (complete) {
            
