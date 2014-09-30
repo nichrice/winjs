@@ -385,11 +385,12 @@ define([
                                 that._viewportSizeChanged(that._getViewportCrossSize());
                             }
 
-                            that._usingStructuralNodes = false;
                             if (allGroupsAreUniform()) {
+                                that._usingStructuralNodes = false;
                                 return null;
                             } else if (that._envInfo.nestedFlexTooLarge || that._envInfo.nestedFlexTooSmall) {
                                 // Store all items in a single itemsblock
+                                that._usingStructuralNodes = true;
                                 return Number.MAX_VALUE;
                             } else {
                                 that._usingStructuralNodes = exports._LayoutCommon._barsPerItemsBlock > 0;
@@ -605,7 +606,10 @@ define([
                     }
 
                     realizedRangePromise = that._measureItem(0).then(function () {
-                        _ElementUtilities[that._usingStructuralNodes ? "addClass" : "removeClass"](that._site.surface, _Constants._structuralNodesClass);
+                        _ElementUtilities[
+                            (that._usingStructuralNodes && !that._envInfo.nestedFlexTooLarge && !that._envInfo.nestedFlexTooSmall) ?
+                            "addClass" : "removeClass"
+                        ](that._site.surface, _Constants._structuralNodesClass);
 
                         if (that._sizes.viewportContentSize !== that._getViewportCrossSize()) {
                             that._viewportSizeChanged(that._getViewportCrossSize());
@@ -4203,7 +4207,10 @@ define([
                     var perfId = "Layout:_layoutNonGroupedVerticalList";
                     that._site._writeProfilerMark(perfId + ",StartTM");
                     this._layoutPromise = that._measureItem(0).then(function () {
-                        _ElementUtilities[that._usingStructuralNodes ? "addClass" : "removeClass"](that._site.surface, _Constants._structuralNodesClass);
+                        _ElementUtilities[
+                            (that._usingStructuralNodes && !that._envInfo.nestedFlexTooLarge && !that._envInfo.nestedFlexTooSmall) ?
+                            "addClass" : "removeClass"
+                        ](that._site.surface, _Constants._structuralNodesClass);
 
                         if (that._sizes.viewportContentSize !== that._getViewportCrossSize()) {
                             that._viewportSizeChanged(that._getViewportCrossSize());
@@ -4245,11 +4252,13 @@ define([
                         // which reduces the trident layout required by measure.
                         return this._measureItem(0).then(function () {
                             if (that._envInfo.nestedFlexTooLarge || that._envInfo.nestedFlexTooSmall) {
-                                that._usingStructuralNodes = false;
+                                // Store all items in a single itemsblock
+                                that._usingStructuralNodes = true;
+                                return Number.MAX_VALUE;
                             } else {
                                 that._usingStructuralNodes = exports.ListLayout._numberOfItemsPerItemsBlock > 0;
+                                return exports.ListLayout._numberOfItemsPerItemsBlock;
                             }
-                            return (that._usingStructuralNodes ? exports.ListLayout._numberOfItemsPerItemsBlock : Number.MAX_VALUE);
                         });
                     }
                 },
