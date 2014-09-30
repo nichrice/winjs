@@ -17,7 +17,7 @@ define([
     '../../Utilities/_UI',
     '../ItemContainer/_Constants',
     './_ErrorMessages'
-    ], function layouts2Init(exports, _Global, _Base, _BaseUtils, _ErrorFromName, _Resources, _WriteProfilerMark, _TransitionAnimation, Promise, Scheduler, _Signal, _Dispose, _ElementUtilities, _SafeHtml, _UI, _Constants, _ErrorMessages) {
+], function layouts2Init(exports, _Global, _Base, _BaseUtils, _ErrorFromName, _Resources, _WriteProfilerMark, _TransitionAnimation, Promise, Scheduler, _Signal, _Dispose, _ElementUtilities, _SafeHtml, _UI, _Constants, _ErrorMessages) {
     "use strict";
 
     var Key = _ElementUtilities.Key,
@@ -385,14 +385,15 @@ define([
                                 that._viewportSizeChanged(that._getViewportCrossSize());
                             }
 
-                            if (!that._envInfo.nestedFlexTooLarge && // Disabling structural nodes works around this issue
-                                    !that._envInfo.nestedFlexTooSmall &&
-                                    allGroupsAreUniform()) {
+                            that._usingStructuralNodes = false;
+                            if (allGroupsAreUniform()) {
+                                return null;
+                            } else if (that._envInfo.nestedFlexTooLarge || that._envInfo.nestedFlexTooSmall) {
+                                // Store all items in a single itemsblock
+                                return Number.MAX_VALUE;
+                            } else {
                                 that._usingStructuralNodes = exports._LayoutCommon._barsPerItemsBlock > 0;
                                 return exports._LayoutCommon._barsPerItemsBlock * that._itemsPerBar;
-                            } else {
-                                that._usingStructuralNodes = false;
-                                return null;
                             }
                         });
                     }
@@ -423,7 +424,7 @@ define([
                     // structural nodes are disabled.
                     function copyItemsContainerTree(itemsContainer) {
                         function copyItems(itemsContainer) {
-                            if (that._usingStructuralNodes) {
+                            if (itemsContainer.itemsBlocks) {
                                 var items = [];
                                 itemsContainer.itemsBlocks.forEach(function (itemsBlock) {
                                     items = items.concat(itemsBlock.items.slice(0));
@@ -4248,7 +4249,7 @@ define([
                             } else {
                                 that._usingStructuralNodes = exports.ListLayout._numberOfItemsPerItemsBlock > 0;
                             }
-                            return (that._usingStructuralNodes ? exports.ListLayout._numberOfItemsPerItemsBlock : null);
+                            return (that._usingStructuralNodes ? exports.ListLayout._numberOfItemsPerItemsBlock : Number.MAX_VALUE);
                         });
                     }
                 },
