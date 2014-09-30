@@ -63,7 +63,7 @@ var strings = {
 /// <icon src="ui_winjs.ui.toolbar.12x12.png" width="12" height="12" />
 /// <icon src="ui_winjs.ui.toolbar.16x16.png" width="16" height="16" />
 /// <htmlSnippet supportsContent="true"><![CDATA[<div data-win-control="WinJS.UI.Toolbar">
-/// <button data-win-control="WinJS.UI.Command" data-win-options="{id:'',label:'example',icon:'back',type:'button',onclick:null,section:'global'}"></button>
+/// <button data-win-control="WinJS.UI.Command" data-win-options="{id:'',label:'example',icon:'back',type:'button',onclick:null,section:'primary'}"></button>
 /// </div>]]></htmlSnippet>
 /// <part name="toolbar" class="win-toolbar" locid="WinJS.UI.Toolbar_part:toolbar">The entire Toolbar control.</part>
 /// <part name="toolbar-overflowbutton" class="win-toolbar-overflowbutton" locid="WinJS.UI.Toolbar_part:Toolbar-overflowbutton">The toolbar overflow button.</part>
@@ -375,7 +375,7 @@ export class Toolbar {
         if (this.data.length > 0) {
             _ElementUtilities.removeClass(this.element, _Constants.emptyToolbarCssClass);
             this.data.forEach((command) => {
-                if (command.section === "selection") {
+                if (command.section === "secondary") {
                     this._secondaryCommands.push(command);
                 } else {
                     this._primaryCommands.push(command);
@@ -790,8 +790,6 @@ export class Toolbar {
         this._writeProfilerMark("_setupOverflowAreaAttached,info");
 
         var hasToggleCommands = false;
-        var containsPrimaryCommands = false;
-        var containsSecondaryCommands = false;
 
         _ElementUtilities.empty(this._attachedOverflowArea);
 
@@ -802,7 +800,6 @@ export class Toolbar {
             if (command.type === _Constants.typeToggle) {
                 hasToggleCommands = true;
             }
-            containsPrimaryCommands = true;
             this._attachedOverflowArea.appendChild(this._getMenuCommand(command).element);
         });
 
@@ -823,12 +820,10 @@ export class Toolbar {
                 if (command.type === _Constants.typeToggle) {
                     hasToggleCommands = true;
                 }
-                containsSecondaryCommands = true;
                 this._attachedOverflowArea.appendChild(this._getMenuCommand(command).element);
             }
         });
 
-        _ElementUtilities[containsPrimaryCommands && containsSecondaryCommands ? "addClass" : "removeClass"](this._attachedOverflowArea, _Constants.overflowAreaWithMixCommandsCssClass);
         _ElementUtilities[hasToggleCommands ? "addClass" : "removeClass"](this._attachedOverflowArea, _Constants.menuToggleClass);
     }
 
