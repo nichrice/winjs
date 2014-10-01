@@ -425,7 +425,7 @@ define([
                     // structural nodes are disabled.
                     function copyItemsContainerTree(itemsContainer) {
                         function copyItems(itemsContainer) {
-                            if (itemsContainer.itemsBlocks) {
+                            if (that._usingStructuralNodes) {
                                 var items = [];
                                 itemsContainer.itemsBlocks.forEach(function (itemsBlock) {
                                     items = items.concat(itemsBlock.items.slice(0));
@@ -608,7 +608,7 @@ define([
                     realizedRangePromise = that._measureItem(0).then(function () {
                         _ElementUtilities[
                             (that._usingStructuralNodes && !that._envInfo.nestedFlexTooLarge && !that._envInfo.nestedFlexTooSmall) ?
-                            "addClass" : "addClass"
+                            "addClass" : "removeClass"
                         ](that._site.surface, _Constants._structuralNodesClass);
 
                         if (that._sizes.viewportContentSize !== that._getViewportCrossSize()) {
@@ -4209,7 +4209,7 @@ define([
                     this._layoutPromise = that._measureItem(0).then(function () {
                         _ElementUtilities[
                             (that._usingStructuralNodes && !that._envInfo.nestedFlexTooLarge && !that._envInfo.nestedFlexTooSmall) ?
-                            "addClass" : "addClass"
+                            "addClass" : "removeClass"
                         ](that._site.surface, _Constants._structuralNodesClass);
 
                         if (that._sizes.viewportContentSize !== that._getViewportCrossSize()) {
