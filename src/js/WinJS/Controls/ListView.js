@@ -3992,7 +3992,7 @@ define([
 
                             // 3) Generate and partially fill, one last itemblock if there are any remaining containers to add.
                             var sizeOfNewLastBlock = toAdd % blockSize;
-                            if (sizeOfNewLastBlock) {
+                            if (sizeOfNewLastBlock > 0) {
                                 markup += "<div class='win-itemsblock'>" + _Helpers._stripedContainers(sizeOfNewLastBlock, indexOfNextGroupItem) + "</div>";
                                 indexOfNextGroupItem += sizeOfNewLastBlock;
                                 newBlocksCount++;
