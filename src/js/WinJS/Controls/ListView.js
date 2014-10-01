@@ -3977,10 +3977,9 @@ define([
                             // 2) Generate as many full itemblocks of containers as we can.                        
                             var newFullBlocks = Math.floor(toAdd / blockSize);
                             if (newFullBlocks > 0) {
-                                firstBlockFirstItemIndex = indexOfNextGroupItem,
-                                secondBlockFirstItemIndex = indexOfNextGroupItem + blockSize;
-
-                                var pairOfItemBlocks = [
+                                var firstBlockFirstItemIndex = indexOfNextGroupItem,
+                                    secondBlockFirstItemIndex = indexOfNextGroupItem + blockSize,
+                                    pairOfItemBlocks = [
                                     // Use pairs to ensure that the container striping pattern is maintained regardless if blockSize is even or odd.
                                     "<div class='win-itemsblock'>" + _Helpers._stripedContainers(blockSize, firstBlockFirstItemIndex) + "</div>",
                                     "<div class='win-itemsblock'>" + _Helpers._stripedContainers(blockSize, secondBlockFirstItemIndex) + "</div>"
