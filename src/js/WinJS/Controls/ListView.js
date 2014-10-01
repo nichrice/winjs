@@ -3944,6 +3944,7 @@ define([
                         var itemsContainer = groupNode.itemsContainer,
                             blocks = itemsContainer.itemsBlocks,
                             blockSize = that._view._blockSize,
+                            lastBlock = blocks.length ? blocks[blocks.length - 1] : null,
                             indexOfNextGroupItem = blocks.length ? (blocks.length - 1) * blockSize + lastBlock.items.length : 0,
                             delta = newSize - indexOfNextGroupItem,
                             children;
@@ -3955,7 +3956,6 @@ define([
                                 markup = "";
 
                             // 1) Add containers to the last itemsblock in the group if it's not already full.
-                            var lastBlock = blocks.length ? blocks[blocks.length - 1] : null;
                             if (lastBlock && lastBlock.items.length < blockSize) {
                                 var emptySpotsToFill = Math.min(toAdd, blockSize - lastBlock.items.length),
                                     sizeOfOldLastBlock = lastBlock.items.length;
