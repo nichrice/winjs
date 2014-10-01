@@ -1103,7 +1103,7 @@ define([
                     set: function (position) {
                         if (position === 0) {
                             this._lastDirection = "right";
-                            this._direction  = "right";
+                            this._direction = "right";
                             this._lastScrollPositionValue = 0;
                         } else {
                             var currentDirection = position < this._lastScrollPositionValue ? "left" : "right";
@@ -1688,7 +1688,7 @@ define([
                                                 evenStripe = _Constants._containerEvenClass,
                                                 // Store the even/odd container class from the container the itemBox was in before being removed. 
                                                 // We want to reapply that class on whichever container we use to perform the itemBox's exit animation.
-                                                containerStripe = _ElementUtilities.hasClass(itemBox.parentElement, evenStripe)? evenStripe: oddStripe;
+                                                containerStripe = _ElementUtilities.hasClass(itemBox.parentElement, evenStripe) ? evenStripe : oddStripe;
 
                                             that._updater.removed.push({
                                                 index: index,
@@ -2481,7 +2481,7 @@ define([
                         _ElementUtilities.addClass(this._viewport, _Constants._verticalClass);
                         _ElementUtilities.removeClass(this._viewport, _Constants._horizontalClass);
                         if (resetScrollPosition) {
-                            _ElementUtilities.setScrollPosition(this._viewport, {scrollLeft: 0});
+                            _ElementUtilities.setScrollPosition(this._viewport, { scrollLeft: 0 });
                         }
                     }
                 },
@@ -2734,7 +2734,7 @@ define([
                         this._pendingScroll = _BaseUtils._requestAnimationFrame(this._checkScroller.bind(this));
 
                         currentScrollPosition = Math.max(0, currentScrollPosition);
-                        var direction =  this._scrollDirection(currentScrollPosition);
+                        var direction = this._scrollDirection(currentScrollPosition);
 
                         this._lastScrollPosition = currentScrollPosition;
                         this._raiseViewLoading(true);
@@ -3944,20 +3944,23 @@ define([
                         var itemsContainer = groupNode.itemsContainer,
                             blocks = itemsContainer.itemsBlocks,
                             blockSize = that._view._blockSize,
-                            lastBlock = blocks.length ? blocks[blocks.length - 1] : null,
-                            indexOfNextGroupItem = blocks.length ? (blocks.length - 1) * blockSize + lastBlock.items.length : 0,
                             delta = newSize - indexOfNextGroupItem,
                             children;
 
                         if (delta > 0) {
                             // Insert new containers.
                             var toAdd = delta,
-                                sizeOfOldLastBlock;
-                            if (lastBlock && lastBlock.items.length < blockSize) {
-                                // 1) Add containers to the last itemsblock in the group if it's not already full.
-                                var emptySpotsToFill = Math.min(toAdd, blockSize - lastBlock.items.length);
-                                sizeOfOldLastBlock = lastBlock.items.length;
+                                newBlocksCount = 0,
+                                markup = "",
+                                indexOfNextGroupItem;
 
+                            // 1) Add containers to the last itemsblock in the group if it's not already full.
+                            var lastBlock = blocks.length ? blocks[blocks.length - 1] : null;
+                            if (lastBlock && lastBlock.items.length < blockSize) {
+                                var emptySpotsToFill = Math.min(toAdd, blockSize - lastBlock.items.length),
+                                    sizeOfOldLastBlock = lastBlock.items.length;
+
+                                indexOfNextGroupItem = blocks.length ? (blocks.length - 1) * blockSize + lastBlock.items.length : 0;
                                 var containersMarkup = _Helpers._stripedContainers(emptySpotsToFill, indexOfNextGroupItem);
 
                                 _SafeHtml.insertAdjacentHTMLUnsafe(lastBlock.element, "beforeend", containersMarkup);
@@ -3972,18 +3975,20 @@ define([
                             indexOfNextGroupItem = blocks.length * blockSize;
 
                             // 2) Generate as many full itemblocks of containers as we can.                        
-                            var newBlocksCount = Math.floor(toAdd / blockSize),
-                                markup = "",
+                            var newFullBlocks = Math.floor(toAdd / blockSize);
+                            if (newFullBlocksCount > 0) {
                                 firstBlockFirstItemIndex = indexOfNextGroupItem,
                                 secondBlockFirstItemIndex = indexOfNextGroupItem + blockSize;
 
-                            var pairOfItemBlocks = [
-                                // Use pairs to ensure that the container striping pattern is maintained regardless if blockSize is even or odd.
-                                "<div class='win-itemsblock'>" + _Helpers._stripedContainers(blockSize, firstBlockFirstItemIndex) + "</div>",
-                                "<div class='win-itemsblock'>" + _Helpers._stripedContainers(blockSize, secondBlockFirstItemIndex) + "</div>"
-                            ];
-                            markup = _Helpers._repeat(pairOfItemBlocks, newBlocksCount);
-                            indexOfNextGroupItem += (newBlocksCount * blockSize);
+                                var pairOfItemBlocks = [
+                                    // Use pairs to ensure that the container striping pattern is maintained regardless if blockSize is even or odd.
+                                    "<div class='win-itemsblock'>" + _Helpers._stripedContainers(blockSize, firstBlockFirstItemIndex) + "</div>",
+                                    "<div class='win-itemsblock'>" + _Helpers._stripedContainers(blockSize, secondBlockFirstItemIndex) + "</div>"
+                                ];
+                                markup = _Helpers._repeat(pairOfItemBlocks, newBlocksCount);
+                                newBlocksCount += newFullBlocks;
+                                indexOfNextGroupItem += (newBlocksCount * blockSize);
+                            }
 
                             // 3) Generate and partially fill, one last itemblock if there are any remaining containers to add.
                             var sizeOfNewLastBlock = toAdd % blockSize;

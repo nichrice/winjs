@@ -2102,10 +2102,12 @@ define([
                     this._listView._writeProfilerMark("createChunk,StartTM");
 
                     function addToGroup(itemsContainer, toAdd) {
-                        var indexOfNextGroupItem;
-                        var lastExistingBlock = itemsContainer.itemsBlocks.length ? itemsContainer.itemsBlocks[itemsContainer.itemsBlocks.length - 1] : null;
-
+                        var newBlocksCount = 0,
+                            markup = "",
+                            indexOfNextGroupItem;
+                            
                         // 1) Add missing containers to the latest itemsblock if it was only partially filled during the previous pass.
+                        var lastExistingBlock = itemsContainer.itemsBlocks.length ? itemsContainer.itemsBlocks[itemsContainer.itemsBlocks.length - 1] : null;
                         if (lastExistingBlock && lastExistingBlock.items.length < blockSize) {
                             var emptySpotsToFill = Math.min(toAdd, blockSize - lastExistingBlock.items.length),
                                 sizeOfOldLastBlock = lastExistingBlock.items.length,
@@ -2130,23 +2132,25 @@ define([
                             toAdd = Math.min(toAdd, Math.max(1, Math.floor(chunkSize / blockSize)) * blockSize);
                         }
 
-                        // 2) Generate as many full itemblocks of containers as we can.                        
-                        var newBlocksCount = Math.floor(toAdd / blockSize),
-                            markup = "",
+                        // 2) Generate as many full itemblocks of containers as we can.
+                        var newFullBlocks = Math.floor(toAdd / blockSize);
+                        if (newFullBlocksCount > 0) {
                             firstBlockFirstItemIndex = indexOfNextGroupItem,
                             secondBlockFirstItemIndex = indexOfNextGroupItem + blockSize;
 
-                        var pairOfItemBlocks = [
-                            // Use pairs to ensure that the container striping pattern is maintained regardless if blockSize is even or odd.
-                            "<div class='win-itemsblock'>" + _Helpers._stripedContainers(blockSize, firstBlockFirstItemIndex) + "</div>",
-                            "<div class='win-itemsblock'>" + _Helpers._stripedContainers(blockSize, secondBlockFirstItemIndex) + "</div>"
-                        ];
-                        markup = _Helpers._repeat(pairOfItemBlocks, newBlocksCount);
-                        indexOfNextGroupItem += (newBlocksCount * blockSize);
+                            var pairOfItemBlocks = [
+                                // Use pairs to ensure that the container striping pattern is maintained regardless if blockSize is even or odd.
+                                "<div class='win-itemsblock'>" + _Helpers._stripedContainers(blockSize, firstBlockFirstItemIndex) + "</div>",
+                                "<div class='win-itemsblock'>" + _Helpers._stripedContainers(blockSize, secondBlockFirstItemIndex) + "</div>"
+                            ];
+                            markup = _Helpers._repeat(pairOfItemBlocks, newFullBlocks);
+                            newBlocksCount += newFullBlocks;
+                            indexOfNextGroupItem += (newBlocksCount * blockSize);
+                        }
 
                         // 3) Generate and partially fill, one last itemblock if there are any remaining containers to add.
                         var sizeOfNewLastBlock = toAdd % blockSize;
-                        if (sizeOfNewLastBlock) {
+                        if (sizeOfNewLastBlock > 0) {
                             markup += "<div class='win-itemsblock'>" + _Helpers._stripedContainers(sizeOfNewLastBlock, indexOfNextGroupItem) + "</div>";
                             indexOfNextGroupItem += sizeOfNewLastBlock;
                             newBlocksCount++;
