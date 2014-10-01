@@ -3976,7 +3976,7 @@ define([
 
                             // 2) Generate as many full itemblocks of containers as we can.                        
                             var newFullBlocks = Math.floor(toAdd / blockSize);
-                            if (newFullBlocksCount > 0) {
+                            if (newFullBlocks > 0) {
                                 firstBlockFirstItemIndex = indexOfNextGroupItem,
                                 secondBlockFirstItemIndex = indexOfNextGroupItem + blockSize;
 
@@ -3985,7 +3985,7 @@ define([
                                     "<div class='win-itemsblock'>" + _Helpers._stripedContainers(blockSize, firstBlockFirstItemIndex) + "</div>",
                                     "<div class='win-itemsblock'>" + _Helpers._stripedContainers(blockSize, secondBlockFirstItemIndex) + "</div>"
                                 ];
-                                markup = _Helpers._repeat(pairOfItemBlocks, newBlocksCount);
+                                markup = _Helpers._repeat(pairOfItemBlocks, newFullBlocks);
                                 newBlocksCount += newFullBlocks;
                                 indexOfNextGroupItem += (newBlocksCount * blockSize);
                             }
