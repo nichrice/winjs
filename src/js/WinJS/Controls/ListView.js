@@ -3944,6 +3944,7 @@ define([
                         var itemsContainer = groupNode.itemsContainer,
                             blocks = itemsContainer.itemsBlocks,
                             blockSize = that._view._blockSize,
+                            indexOfNextGroupItem = blocks.length ? (blocks.length - 1) * blockSize + lastBlock.items.length : 0,
                             delta = newSize - indexOfNextGroupItem,
                             children;
 
@@ -3951,8 +3952,7 @@ define([
                             // Insert new containers.
                             var toAdd = delta,
                                 newBlocksCount = 0,
-                                markup = "",
-                                indexOfNextGroupItem;
+                                markup = "";
 
                             // 1) Add containers to the last itemsblock in the group if it's not already full.
                             var lastBlock = blocks.length ? blocks[blocks.length - 1] : null;
@@ -3960,7 +3960,6 @@ define([
                                 var emptySpotsToFill = Math.min(toAdd, blockSize - lastBlock.items.length),
                                     sizeOfOldLastBlock = lastBlock.items.length;
 
-                                indexOfNextGroupItem = blocks.length ? (blocks.length - 1) * blockSize + lastBlock.items.length : 0;
                                 var containersMarkup = _Helpers._stripedContainers(emptySpotsToFill, indexOfNextGroupItem);
 
                                 _SafeHtml.insertAdjacentHTMLUnsafe(lastBlock.element, "beforeend", containersMarkup);
