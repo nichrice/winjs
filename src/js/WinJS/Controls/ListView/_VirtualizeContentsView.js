@@ -2134,7 +2134,7 @@ define([
 
                         // 2) Generate as many full itemblocks of containers as we can.
                         var newFullBlocks = Math.floor(toAdd / blockSize);
-                        if (newFullBlocksCount > 0) {
+                        if (newFullBlocks > 0) {
                             firstBlockFirstItemIndex = indexOfNextGroupItem,
                             secondBlockFirstItemIndex = indexOfNextGroupItem + blockSize;
 

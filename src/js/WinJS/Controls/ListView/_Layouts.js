@@ -385,7 +385,7 @@ define([
                                 that._viewportSizeChanged(that._getViewportCrossSize());
                             }
 
-                            if (allGroupsAreUniform()) {
+                            if (!allGroupsAreUniform()) {
                                 that._usingStructuralNodes = false;
                                 return null;
                             } else if (that._envInfo.nestedFlexTooLarge || that._envInfo.nestedFlexTooSmall) {
@@ -608,7 +608,7 @@ define([
                     realizedRangePromise = that._measureItem(0).then(function () {
                         _ElementUtilities[
                             (that._usingStructuralNodes && !that._envInfo.nestedFlexTooLarge && !that._envInfo.nestedFlexTooSmall) ?
-                            "addClass" : "removeClass"
+                            "addClass" : "addClass"
                         ](that._site.surface, _Constants._structuralNodesClass);
 
                         if (that._sizes.viewportContentSize !== that._getViewportCrossSize()) {
@@ -4209,7 +4209,7 @@ define([
                     this._layoutPromise = that._measureItem(0).then(function () {
                         _ElementUtilities[
                             (that._usingStructuralNodes && !that._envInfo.nestedFlexTooLarge && !that._envInfo.nestedFlexTooSmall) ?
-                            "addClass" : "removeClass"
+                            "addClass" : "addClass"
                         ](that._site.surface, _Constants._structuralNodesClass);
 
                         if (that._sizes.viewportContentSize !== that._getViewportCrossSize()) {
