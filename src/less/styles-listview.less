@@ -291,6 +291,21 @@ html.win-hoverable .win-container.win-selected:hover .win-selectionborder {
     #flex > .align-content(flex-start);
 }
 
+/*.win-listview,
+.win-listview .win-vertical,
+.win-listview .win-horizontal {
+    & .win-structuralnodes.win-avoidnestingflexboxes .win-itemscontainer.win-laidout,
+    & .win-structuralnodes.win-avoidnestingflexboxes.win-listlayout .win-itemscontainer.win-laidout,
+    & .win-structuralnodes.win-avoidnestingflexboxes.win-gridlayout .win-uniformgridlayout.win-itemscontainer.win-laidout {
+        display: block;
+
+        & .win-itemscontainer-padder {
+            display: none;
+        }
+    }
+}*/
+
+
 //
 // ListLayout
 //
@@ -432,7 +447,7 @@ html.win-hoverable .win-container.win-selected:hover .win-selectionborder {
 // Uniform and cell spanning groups
 .win-listview .win-gridlayout.win-structuralnodes .win-uniformgridlayout.win-itemscontainer.win-laidout {
     #flex > .display-flex();
-    #flex > .flex-direction(row);
+     #flex > .flex-direction(row);
 }
 .win-listview .win-horizontal .win-listlayout .win-itemscontainer,
 .win-listview.win-groups .win-horizontal .win-listlayout .win-itemscontainer.win-laidout,

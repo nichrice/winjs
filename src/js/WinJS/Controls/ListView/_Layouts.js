@@ -325,6 +325,7 @@ define([
                         _ElementUtilities.removeClass(this._site.surface, _Constants._headerPositionTopClass);
                         _ElementUtilities.removeClass(this._site.surface, _Constants._headerPositionLeftClass);
                         _ElementUtilities.removeClass(this._site.surface, _Constants._structuralNodesClass);
+                        _ElementUtilities.removeClass(this._site.surface, _Constants._avoidNestingFlexBoxesClass);
                         this._site.surface.style.cssText = "";
                         if (this._groups) {
                             cleanGroups(this._groups);
@@ -606,10 +607,10 @@ define([
                     }
 
                     realizedRangePromise = that._measureItem(0).then(function () {
-                        _ElementUtilities[
-                            (that._usingStructuralNodes && !that._envInfo.nestedFlexTooLarge && !that._envInfo.nestedFlexTooSmall) ?
-                            "addClass" : "removeClass"
-                        ](that._site.surface, _Constants._structuralNodesClass);
+                        _ElementUtilities[(that._usingStructuralNodes) ? "addClass" : "removeClass"]
+                            (that._site.surface, _Constants._structuralNodesClass);
+                        _ElementUtilities[(that._envInfo.nestedFlexTooLarge || that._envInfo.nestedFlexTooSmall) ? "addClass" : "removeClass"]
+                            (that._site.surface, _Constants._avoidNestingFlexBoxesClass);
 
                         if (that._sizes.viewportContentSize !== that._getViewportCrossSize()) {
                             that._viewportSizeChanged(that._getViewportCrossSize());
@@ -4207,10 +4208,11 @@ define([
                     var perfId = "Layout:_layoutNonGroupedVerticalList";
                     that._site._writeProfilerMark(perfId + ",StartTM");
                     this._layoutPromise = that._measureItem(0).then(function () {
-                        _ElementUtilities[
-                            (that._usingStructuralNodes && !that._envInfo.nestedFlexTooLarge && !that._envInfo.nestedFlexTooSmall) ?
-                            "addClass" : "removeClass"
-                        ](that._site.surface, _Constants._structuralNodesClass);
+                        _ElementUtilities[(that._usingStructuralNodes) ? "addClass" : "removeClass"]
+                            (that._site.surface, _Constants._structuralNodesClass);
+                        _ElementUtilities[(that._envInfo.nestedFlexTooLarge || that._envInfo.nestedFlexTooSmall) ? "addClass" : "removeClass"]
+                            (that._site.surface, _Constants._avoidNestingFlexBoxesClass);
+
 
                         if (that._sizes.viewportContentSize !== that._getViewportCrossSize()) {
                             that._viewportSizeChanged(that._getViewportCrossSize());
