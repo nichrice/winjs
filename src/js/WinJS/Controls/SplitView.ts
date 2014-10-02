@@ -21,7 +21,12 @@ var ClassNames = {
     pane: "win-splitview-pane",
 	content: "win-splitview-content",
 	paneHidden: "win-splitview-pane-hidden",
-    paneShown: "win-splitview-pane-shown"
+    paneShown: "win-splitview-pane-shown",
+    
+    _placementLeft: "win-splitview-placementleft",
+    _placementRight: "win-splitview-placementright",
+    _placementTop: "win-splitview-placementtop",
+    _placementBottom: "win-splitview-placementbottom"
 };
 var EventNames = {
     beforeShow: "beforeshow",
@@ -164,6 +169,11 @@ export class SplitView {
     set placement(value: string) {
         if (this._placement !== value) {
             if (Object.keys(Placement).indexOf(value) !== -1) {
+                if (Object.keys(Placement).indexOf(this._placement) !== -1) {
+                    _ElementUtilities.removeClass(this._dom.root, "win-splitview-placement" + this._placement);
+                }
+                _ElementUtilities.addClass(this._dom.root, "win-splitview-placement" + value);
+                
                 this._placement = value;
                 this._layoutPaneAndContent();
             }
@@ -199,14 +209,14 @@ export class SplitView {
     }
 
 	private _initializeDom(root: HTMLElement): void {
-        var paneEl = <HTMLElement>root.querySelector(ClassNames.pane) || _Global.document.createElement("div");
+        var paneEl = <HTMLElement>root.querySelector("." + ClassNames.pane) || _Global.document.createElement("div");
         _ElementUtilities.addClass(paneEl, ClassNames.pane);
         
-        var contentEl = <HTMLElement>root.querySelector(ClassNames.content) || _Global.document.createElement("div");
+        var contentEl = <HTMLElement>root.querySelector("." + ClassNames.content) || _Global.document.createElement("div");
         _ElementUtilities.addClass(contentEl, ClassNames.content);
         
         root["winControl"] = this;
-        _ElementUtilities.addClass(root, ClassNames.content);
+        _ElementUtilities.addClass(root, ClassNames.splitView);
         _ElementUtilities.addClass(root, "win-disposable");
         this._dom = {
             root: root,
