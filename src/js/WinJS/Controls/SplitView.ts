@@ -26,7 +26,9 @@ var ClassNames = {
     _placementLeft: "win-splitview-placementleft",
     _placementRight: "win-splitview-placementright",
     _placementTop: "win-splitview-placementtop",
-    _placementBottom: "win-splitview-placementbottom"
+    _placementBottom: "win-splitview-placementbottom",
+    _paneHiddenMode: "win-splitview-panehiddenmode",
+    _paneShownMode: "win-splitview-paneshownmode"
 };
 var EventNames = {
     beforeShow: "beforeshow",
@@ -134,14 +136,14 @@ export class SplitView {
     /// Gets the DOM element that hosts the SplitView pane.
     /// </field>
     get paneElement(): HTMLElement {
-    	return this._dom.root;
+    	return this._dom.pane;
     }
                 
     /// <field type="HTMLElement" domElement="true" readonly="true" hidden="true" locid="WinJS.UI.SplitView.contentElement" helpKeyword="WinJS.UI.SplitView.contentElement">
     /// Gets the DOM element that hosts the SplitView's content.
     /// </field>
     get contentElement(): HTMLElement {
-    	return this._dom.root;
+    	return this._dom.content;
     }
     
     private _shownDisplayMode: string;
@@ -179,6 +181,8 @@ export class SplitView {
             }
         }
     }
+    
+    // TODO: get/set hidden
 
 	dispose(): void {
 	    /// <signature helpKeyword="WinJS.UI.SplitView.dispose">
@@ -198,6 +202,8 @@ export class SplitView {
         /// Shows the SplitView's pane.
         /// </summary>
         /// </signature>
+        _ElementUtilities.removeClass(this._dom.root, ClassNames._paneHiddenMode);
+        _ElementUtilities.addClass(this._dom.root, ClassNames._paneShownMode);
     }
 
     hidePane(): void {
@@ -206,6 +212,8 @@ export class SplitView {
         /// Hides the SplitView's pane.
         /// </summary>
         /// </signature>
+        _ElementUtilities.removeClass(this._dom.root, ClassNames._paneShownMode);
+        _ElementUtilities.addClass(this._dom.root, ClassNames._paneHiddenMode);
     }
 
 	private _initializeDom(root: HTMLElement): void {
@@ -218,6 +226,7 @@ export class SplitView {
         root["winControl"] = this;
         _ElementUtilities.addClass(root, ClassNames.splitView);
         _ElementUtilities.addClass(root, "win-disposable");
+        _ElementUtilities.addClass(root, ClassNames._paneHiddenMode);
         this._dom = {
             root: root,
             pane: paneEl,
