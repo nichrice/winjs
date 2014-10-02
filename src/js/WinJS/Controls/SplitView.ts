@@ -7,6 +7,7 @@ import _Events = require('../Core/_Events');
 import _ErrorFromName = require('../Core/_ErrorFromName');
 import _Control = require('../Utilities/_Control');
 import _Hoverable = require('../Utilities/_Hoverable');
+import _ElementUtilities = require('../Utilities/_ElementUtilities');
 
 // TODO: Do we need to require 'require-style!less/controls'?
 
@@ -19,7 +20,8 @@ var ClassNames = {
     splitView: "win-splitview",
     pane: "win-splitview-pane",
 	content: "win-splitview-content",
-	paneHidden: "win-splitview-panehidden"
+	paneHidden: "win-splitview-pane-hidden",
+    paneShown: "win-splitview-pane-shown"
 };
 var EventNames = {
     beforeShow: "beforeshow",
@@ -28,12 +30,12 @@ var EventNames = {
     afterHide: "afterhide"
 };
 // TODO: switch to enum? con: lose string debuggability. pro: gain type checking for properties.
-var PaneDisplayMode = {
-    /// <field locid="WinJS.UI.SplitView.PaneDisplayMode.overlay" helpKeyword="WinJS.UI.SplitView.PaneDisplayMode.overlay">
+var ShownDisplayMode = {
+    /// <field locid="WinJS.UI.SplitView.ShownDisplayMode.overlay" helpKeyword="WinJS.UI.SplitView.ShownDisplayMode.overlay">
     /// When the pane is shown, it doesn't take up any space and it is light dismissable.
     /// </field>
     overlay: "overlay",
-    /// <field locid="WinJS.UI.SplitView.PaneDisplayMode.inline" helpKeyword="WinJS.UI.SplitView.PaneDisplayMode.inline">
+    /// <field locid="WinJS.UI.SplitView.ShownDisplayMode.inline" helpKeyword="WinJS.UI.SplitView.ShownDisplayMode.inline">
     /// When the pane is shown, it occupies space leaving less room for the SplitView's content.
     /// </field>
     inline: "inline"
@@ -107,8 +109,10 @@ export class SplitView {
         }
         
         this._disposed = false;
+
+        this._initializeDom(element || _Global.document.createElement("div"));
         
-        this.paneDisplayMode = PaneDisplayMode.overlay;
+        this.shownDisplayMode = ShownDisplayMode.overlay;
         this.placement = Placement.left;
 
         _Control.setOptions(this, options);
@@ -134,23 +138,36 @@ export class SplitView {
     get contentElement(): HTMLElement {
     	return this._dom.root;
     }
-                
-    /// <field type="String" oamOptionsDatatype="WinJS.UI.SplitView.PaneDisplayMode" locid="WinJS.UI.SplitView.paneDisplayMode" helpKeyword="WinJS.UI.SplitView.paneDisplayMode">
+    
+    private _shownDisplayMode: string;
+    /// <field type="String" oamOptionsDatatype="WinJS.UI.SplitView.ShownDisplayMode" locid="WinJS.UI.SplitView.shownDisplayMode" helpKeyword="WinJS.UI.SplitView.shownDisplayMode">
     /// Gets or sets the display mode of the SplitView's pane.
     /// </field>
-    get paneDisplayMode(): string {
-		return "";
+    get shownDisplayMode(): string {
+		return this._shownDisplayMode;
     }
-    set paneDisplayMode(value: string) {
+    set shownDisplayMode(value: string) {
+        if (this._shownDisplayMode !== value) {
+            if (Object.keys(ShownDisplayMode).indexOf(value) !== -1) {
+                this._shownDisplayMode = value;
+            }
+        }
     }
-                
+    
+    private _placement: string;
     /// <field type="String" oamOptionsDatatype="WinJS.UI.SplitView.Placement" locid="WinJS.UI.SplitView.placement" helpKeyword="WinJS.UI.SplitView.placement">
     /// Gets or sets the placement of the SplitView's pane.
     /// </field>
     get placement(): string {
-		return "";
+		return this._placement;
 	}
     set placement(value: string) {
+        if (this._placement !== value) {
+            if (Object.keys(Placement).indexOf(value) !== -1) {
+                this._placement = value;
+                this._layoutPaneAndContent();
+            }
+        }
     }
 
 	dispose(): void {
@@ -182,12 +199,38 @@ export class SplitView {
     }
 
 	private _initializeDom(root: HTMLElement): void {
+        var paneEl = <HTMLElement>root.querySelector(ClassNames.pane) || _Global.document.createElement("div");
+        _ElementUtilities.addClass(paneEl, ClassNames.pane);
+        
+        var contentEl = <HTMLElement>root.querySelector(ClassNames.content) || _Global.document.createElement("div");
+        _ElementUtilities.addClass(contentEl, ClassNames.content);
+        
+        root["winControl"] = this;
+        _ElementUtilities.addClass(root, ClassNames.content);
+        _ElementUtilities.addClass(root, "win-disposable");
+        this._dom = {
+            root: root,
+            pane: paneEl,
+            content: contentEl
+        };
+        
+        this._layoutPaneAndContent();
 	}
+    
+    private _layoutPaneAndContent(): void {
+        if (this.placement === Placement.left || this.placement === Placement.top) {
+            this._dom.root.appendChild(this._dom.pane);
+            this._dom.root.appendChild(this._dom.content);
+        } else {
+            this._dom.root.appendChild(this._dom.content);
+            this._dom.root.appendChild(this._dom.pane);
+        }
+    }
 	
-	/// <field locid="WinJS.UI.SplitView.PaneDisplayMode" helpKeyword="WinJS.UI.SplitView.PaneDisplayMode">
+	/// <field locid="WinJS.UI.SplitView.ShownDisplayMode" helpKeyword="WinJS.UI.SplitView.ShownDisplayMode">
     /// Display options for a SplitView's pane.
     /// </field>
-	static PaneDisplayMode = PaneDisplayMode;
+	static ShownDisplayMode = ShownDisplayMode;
 	
 	/// <field locid="WinJS.UI.SplitView.Placement" helpKeyword="WinJS.UI.SplitView.Placement">
 	/// Placement options for a SplitView's pane.
