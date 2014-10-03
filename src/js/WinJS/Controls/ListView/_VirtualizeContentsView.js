@@ -2051,10 +2051,9 @@ define([
                     function addToGroup(itemsContainer, groupSize) {
                         var children = itemsContainer.element.children,
                             oldSize = children.length,
-                            toAdd = Math.min(groupSize - itemsContainer.items.length, chunkSize),
-                            containersMarkup = _Helpers._stripedContainers(toAdd, itemsContainer.items.length);
+                            toAdd = Math.min(groupSize - itemsContainer.items.length, chunkSize);
 
-                        _SafeHtml.insertAdjacentHTMLUnsafe(itemsContainer.element, "beforeend", containersMarkup);
+                        _SafeHtml.insertAdjacentHTMLUnsafe(itemsContainer.element, "beforeend", _Helpers._repeat("<div class='win-container win-backdrop'></div>", toAdd));
 
                         for (var i = 0; i < toAdd; i++) {
                             var container = children[oldSize + i];
