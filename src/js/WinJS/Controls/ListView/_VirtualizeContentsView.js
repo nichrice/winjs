@@ -2105,7 +2105,9 @@ define([
                         var newBlocksCount = 0,
                             markup = "",
                             indexOfNextGroupItem;
-                            
+
+                        toAdd = Math.min(toAdd, chunkSize);
+
                         // 1) Add missing containers to the latest itemsblock if it was only partially filled during the previous pass.
                         var lastExistingBlock = itemsContainer.itemsBlocks.length ? itemsContainer.itemsBlocks[itemsContainer.itemsBlocks.length - 1] : null;
                         if (lastExistingBlock && lastExistingBlock.items.length < blockSize) {
@@ -2128,9 +2130,9 @@ define([
                         }
                         indexOfNextGroupItem = itemsContainer.itemsBlocks.length * blockSize;
 
-                        if (toAdd > chunkSize) {
-                            toAdd = Math.min(toAdd, Math.max(1, Math.floor(chunkSize / blockSize)) * blockSize);
-                        }
+                        //if (toAdd > chunkSize) {
+                        //    toAdd = Math.min(toAdd, Math.max(1, Math.floor(chunkSize / blockSize)) * blockSize);
+                        //}
 
                         // 2) Generate as many full itemblocks of containers as we can.
                         var newFullBlocks = Math.floor(toAdd / blockSize);
