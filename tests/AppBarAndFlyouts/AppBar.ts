@@ -241,10 +241,10 @@ module CorsicaTests {
             testGoodInitOption("closedDisplayMode", undefined);
 
             LiveUnit.LoggingCore.logComment("Testing layout");
-            testGoodInitOption("layout", "drawer");
+            testGoodInitOption("layout", "menu");
             testGoodInitOption("layout", "custom");
             testGoodInitOption("layout", "commands");
-            var badLayout = "Invalid argument: The layout property must be 'custom', 'drawer' or 'commands'";
+            var badLayout = "Invalid argument: The layout property must be 'custom', 'menu' or 'commands'";
             testBadInitOption("layout", "fixed", "WinJS.UI.AppBar.BadLayout", badLayout);
             testBadInitOption("layout", -1, "WinJS.UI.AppBar.BadLayout", badLayout);
             testBadInitOption("layout", 12, "WinJS.UI.AppBar.BadLayout", badLayout);
@@ -844,7 +844,7 @@ module CorsicaTests {
         };
 
         testCommandsLayoutCleansUpAfterItself = function (complete) {
-            // Verify that switching away from commands layout will remove the commandlayout class, the win-reduced class,
+            // Verify that switching away from commands layout will remove the commandlayout class,
             // and any commands layout specific HTML from the AppBar element.
             var root = document.getElementById("appBarDiv");
             root.innerHTML =
@@ -859,12 +859,8 @@ module CorsicaTests {
             var layoutHTML = appBar.element.querySelectorAll(".win-primarygroup, .win-secondarygroup");
             LiveUnit.Assert.isTrue(layoutHTML.length === 2, "commands layout appbar should have its own HTML inside of the AppBar element.");
 
-            // Programatically add the win-reduced class to verify that switching away from commands layout removes it.
-            WinJS.Utilities.addClass(appBar.element, _Constants.reducedClass);
-
             appBar.layout = "custom";
             LiveUnit.Assert.isFalse(WinJS.Utilities.hasClass(appBar.element, _Constants.commandLayoutClass), "Custom Layout AppBar should not have the commands layout CSS class");
-            LiveUnit.Assert.isFalse(WinJS.Utilities.hasClass(appBar.element, _Constants.reducedClass), "Custom Layout AppBar should not have the win-reduced CSS class");
             layoutHTML = appBar.element.querySelectorAll(".win-primarygroup, .win-secondarygroup");
             LiveUnit.Assert.isTrue(layoutHTML.length === 0, "custom layout appbar should not have commands layout HTML inside of the AppBar element.");
 
@@ -1831,7 +1827,7 @@ module CorsicaTests {
 
         };
 
-        testDrawerLayoutConstruction = function (complete) {
+        testMenuLayoutConstruction = function (complete) {
             var root = document.getElementById("appBarDiv");
             root.innerHTML =
             "<div id='appBar'>" +
@@ -1843,7 +1839,7 @@ module CorsicaTests {
             "<button data-win-control='WinJS.UI.AppBarCommand' data-win-options='{id:\"Button4\", label:\"Button 4\", type:\"toggle\", section:\"secondary\"}'></button>" +
             "</div>";
             var appBar = new WinJS.UI.AppBar(<HTMLElement>root.querySelector("#appBar"), {
-                layout: "drawer",
+                layout: "menu",
                 placement: "top",
             });
 
@@ -1853,9 +1849,9 @@ module CorsicaTests {
 
                 LiveUnit.Assert.isNotNull(toolbarEl, "Toolbar element not found");
                 LiveUnit.Assert.isTrue(WinJS.Utilities.hasClass((<HTMLElement>toolbarEl).parentElement, "win-appbar-toolbarcontainer"));
-                LiveUnit.Assert.isTrue(WinJS.Utilities.hasClass((<HTMLElement>toolbarEl).parentElement.parentElement, "win-appbar-drawer"));
+                LiveUnit.Assert.isTrue(WinJS.Utilities.hasClass((<HTMLElement>toolbarEl).parentElement.parentElement, "win-appbar-menu"));
                 LiveUnit.Assert.isTrue(WinJS.Utilities.hasClass((<HTMLElement>toolbarEl).parentElement.parentElement.parentElement, "win-appbar"));
-                LiveUnit.Assert.areEqual(Helper.Toolbar.Constants.overflowModeAttached, toolbar.overflowMode, "Invalid overflowMode toolbar configuration in the appbar");
+                LiveUnit.Assert.areEqual(true, toolbar.inlineMenu, "Invalid inlineMenu toolbar configuration in the appbar");
 
                 Helper.Toolbar.verifyMainActionVisibleCommandsLabels(toolbar, ["Button 0", "Separator", "Button 1"]);
                 Helper.Toolbar.verifyOverflowAreaCommandsLabels(toolbar, ["Button 2", "Button 3", "Button 4"]);

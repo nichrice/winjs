@@ -2,7 +2,8 @@
     "name": "winjs",
     "title": "Windows Library for JavaScript (WinJS)",
     "description": "WinJS is a set of JavaScript toolkits that allow developers to build applications using HTML/JS/CSS technology.",
-    "version": "3.0.0",
+    "version": "3.1.0",
+    "main":  "js/WinJS.js",
     "homepage": "http://try.buildwinjs.com/",
     "author": {
         "name": "Microsoft Open Technologies, Inc. and other contributors",
@@ -44,9 +45,11 @@
         "fs-extra": "^0.10.0",
         "websocket": "^1.0.8",
         "grunt-jscs": "^0.6.2",
-        "grunt-tsd": "^0.1.0",
         "grunt-ts": "^1.11.6",
         "typescript": "^1.0.1",
         "grunt-contrib-cssmin": "^0.10.0"
+    },
+    "browserify": {
+        "transform": "deamdify"
     }
 }
