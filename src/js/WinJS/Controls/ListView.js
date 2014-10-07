@@ -3952,13 +3952,12 @@ define([
                         if (delta > 0) {
                             // Insert new containers.
                             var toAdd = delta,
-                                newBlocksCount = 0,
-                                markup = "";
+                                sizeOfOldLastBlock;
 
                             // 1) Add containers to the last itemsblock in the group if it's not already full.
                             if (lastBlock && lastBlock.items.length < blockSize) {
-                                var emptySpotsToFill = Math.min(toAdd, blockSize - lastBlock.items.length),
-                                    sizeOfOldLastBlock = lastBlock.items.length;
+                                var emptySpotsToFill = Math.min(toAdd, blockSize - lastBlock.items.length);
+                                sizeOfOldLastBlock = lastBlock.items.length;
 
                                 var containersMarkup = _Helpers._stripedContainers(emptySpotsToFill, indexOfNextGroupItem);
 
@@ -3974,8 +3973,10 @@ define([
                             indexOfNextGroupItem = blocks.length * blockSize;
 
                             // 2) Generate as many full itemblocks of containers as we can.                        
-                            var newFullBlocks = Math.floor(toAdd / blockSize);
-                            if (newFullBlocks > 0) {
+                            var markup = "",
+                                newBlocksCount = Math.floor(toAdd / blockSize);
+                                
+                            if (newBlocksCount > 0) {
                                 var firstBlockFirstItemIndex = indexOfNextGroupItem,
                                     secondBlockFirstItemIndex = indexOfNextGroupItem + blockSize,
                                     pairOfItemBlocks = [
@@ -3983,8 +3984,7 @@ define([
                                     "<div class='win-itemsblock'>" + _Helpers._stripedContainers(blockSize, firstBlockFirstItemIndex) + "</div>",
                                     "<div class='win-itemsblock'>" + _Helpers._stripedContainers(blockSize, secondBlockFirstItemIndex) + "</div>"
                                 ];
-                                markup = _Helpers._repeat(pairOfItemBlocks, newFullBlocks);
-                                newBlocksCount += newFullBlocks;
+                                markup = _Helpers._repeat(pairOfItemBlocks, newBlocksCount);
                                 indexOfNextGroupItem += (newBlocksCount * blockSize);
                             }
 
