@@ -134,8 +134,6 @@ module WinJSTests {
                     LiveUnit.Assert.areEqual(listView._view.containers[itemIndex++], block.items[n]);
                 }
             }
-
-            // Only do this in the structural node case until we can support both.
             verifyContainerStripesByIndex(listView);
         }
     }
@@ -243,7 +241,6 @@ module WinJSTests {
                 LiveUnit.Assert.areEqual(containers.length - 1, lastItem);
             });
         } else {
-            // Only do this in the structural node case until we can support both.
             verifyContainerStripesByIndex(listView);
         }
 
@@ -619,13 +616,16 @@ module WinJSTests {
 
     function getPairWiseConfigurationsForBigDataStripeTests() {
 
+        // We use this instead of the larger BIG_DATASET constant, otherwise FireFox takes too long and the test times out.
+        var bigDataSize = 3000; 
+
         // Couple the itemDataSource and groupDataSource together to avoid scenarios that might pair smallDataSource together with bigGroupedDataSource
         function generateBigDataSources() {
-            var bigList = new WinJS.Binding.List(initData(BIG_DATASET));
+            var bigList = new WinJS.Binding.List(initData(bigDataSize));
             return { itemDataSource: bigList.dataSource, groupDataSource: null }
         }
         function generateBigGroupedDataSources() {
-            var bigGroupedList = new WinJS.Binding.List(initData(BIG_DATASET)).createGrouped(groupKey, groupData);
+            var bigGroupedList = new WinJS.Binding.List(initData(bigDataSize)).createGrouped(groupKey, groupData);
             return { itemDataSource: bigGroupedList.dataSource, groupDataSource: bigGroupedList.groups.dataSource };
         }
 
