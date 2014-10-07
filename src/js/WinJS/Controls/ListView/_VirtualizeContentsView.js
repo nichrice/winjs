@@ -276,6 +276,7 @@ define([
 
                                 var container = that.getContainer(itemIndex);
                                 if (itemBox.parentNode !== container) {
+                                    itemData.container = container;
                                     that._appendAndRestoreFocus(container, itemBox);
 
                                     appendItemsCount++;
@@ -284,7 +285,6 @@ define([
                                     }
                                     lastIndex = itemIndex;
 
-                                    itemData.container = container;
                                     if (that._listView._isSelected(itemIndex)) {
                                         _ElementUtilities.addClass(container, _Constants._selectedClass);
                                     }
@@ -2531,6 +2531,7 @@ define([
                             itemBox = itemData.itemBox;
 
                         if (itemBox && container) {
+                            itemData.container = container;
                             if (itemBox.parentNode !== container) {
                                 if (index >= that.firstIndexDisplayed && index <= that.lastIndexDisplayed) {
                                     that._appendAndRestoreFocus(container, itemBox);
@@ -2539,7 +2540,6 @@ define([
                                 }
                             }
                             _ElementUtilities.removeClass(container, _Constants._backdropClass);
-                            itemData.container = container;
 
                             _ElementUtilities[that._listView.selection._isIncluded(index) ? "addClass" : "removeClass"](container, _Constants._selectedClass);
                             if (!that._listView.selection._isIncluded(index) && _ElementUtilities.hasClass(itemBox, _Constants._selectedClass)) {
