@@ -9,6 +9,7 @@ import _Control = require('../Utilities/_Control');
 import _Hoverable = require('../Utilities/_Hoverable');
 import _ElementUtilities = require('../Utilities/_ElementUtilities');
 import Promise = require('../Promise');
+import Animations = require('../Animations');
 
 // TODO: Do we need to require 'require-style!less/controls'?
 
@@ -142,10 +143,10 @@ export class SplitView {
         this._disposed = false;
 
         this._initializeDom(element || _Global.document.createElement("div"));
-
+        
+        this._hidden = true;
         this.shownDisplayMode = ShownDisplayMode.overlay;
         this.placement = Placement.left;
-        this.hidden = true;
 
         _Control.setOptions(this, options);
         //this._updateUI();
@@ -260,6 +261,9 @@ export class SplitView {
         /// </signature>
         this._showPane();
         this._updateUI();
+        if (this.shownDisplayMode === ShownDisplayMode.overlay) {
+            Animations.showEdgeUI(this._dom.pane, this._getAnimationOffsets());
+        }
     }
 
     private _showPane(): void {
@@ -274,8 +278,15 @@ export class SplitView {
         /// Hides the SplitView's pane.
         /// </summary>
         /// </signature>
-        this._hidePane();
-        this._updateUI();
+        var p = Promise.wrap(null);
+        
+        if (this.shownDisplayMode === ShownDisplayMode.overlay) {
+            p = Animations.hideEdgeUI(this._dom.pane, this._getAnimationOffsets());
+        }
+        p.done(() => { 
+            this._hidePane();
+            this._updateUI();
+        });
     }
 
     private _hidePane(): void {
@@ -352,7 +363,7 @@ export class SplitView {
         return this.placement === Placement.left || this.placement === Placement.right;
     }
 
-    private _measureHiddenPane(): { width: number; height: number } {
+    private _measureHiddenPane(): { width: number; height: number; } {
         var wasShown = !this.hidden;
         if (wasShown) {
             this._hidePane();
@@ -365,6 +376,21 @@ export class SplitView {
             this._showPane();
         }
         return size;
+    }
+    
+    private _getAnimationOffsets(): { top: string; left: string; } {
+        var size = {
+            width: _ElementUtilities.getTotalWidth(this._dom.pane),
+            height: _ElementUtilities.getTotalHeight(this._dom.pane)
+        };
+        // TODO: rtl
+        return this._horizontal ? {
+            left: (this.placement === Placement.left ? -1 : 1) * size.width + "px",
+            top: "0px"
+        } : {
+            left: "0px",
+            top: (this.placement === Placement.top ? -1 : 1) * size.height + "px"
+        };
     }
 
     /// <field locid="WinJS.UI.SplitView.ShownDisplayMode" helpKeyword="WinJS.UI.SplitView.ShownDisplayMode">
