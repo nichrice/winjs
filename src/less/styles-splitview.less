@@ -13,13 +13,23 @@
   &.win-splitview-placementtop,
   &.win-splitview-placementbottom {
     #flex > .flex-direction(column);
+    
+    .win-splitview-panewrapper {
+      #flex > .flex-direction(column);
+    }
   }
-
-  .win-splitview-pane,
-  .win-splitview-paneplaceholder {
+  
+  .win-splitview-panewrapper {
     #flex > .flex(@grow: 0; @shrink: 0);
     // TODO: What should the overflow in each direction be?
     overflow: hidden;
+    
+    #flex > .display-flex();
+  }
+  
+  .win-splitview-pane,
+  .win-splitview-paneplaceholder {
+    #flex > .flex(@grow: 0; @shrink: 0);
   }
 
   .win-splitview-content {
@@ -34,7 +44,7 @@
         height: 320px;
       }
 
-      &.win-splitview-paneoverlaymode .win-splitview-pane {
+      &.win-splitview-paneoverlaymode .win-splitview-panewrapper {
         position: absolute;
         top: 0;
         left: 0;
@@ -47,7 +57,7 @@
         height: 320px;
       }
 
-      &.win-splitview-paneoverlaymode .win-splitview-pane {
+      &.win-splitview-paneoverlaymode .win-splitview-panewrapper {
         position: absolute;
         bottom: 0;
         left: 0;
@@ -61,7 +71,7 @@
         width: 320px;
       }
 
-      &.win-splitview-paneoverlaymode .win-splitview-pane {
+      &.win-splitview-paneoverlaymode .win-splitview-panewrapper {
         position: absolute;
         top: 0;
         left: 0;
@@ -76,7 +86,7 @@
         width: 320px;
       }
 
-      &.win-splitview-paneoverlaymode .win-splitview-pane {
+      &.win-splitview-paneoverlaymode .win-splitview-panewrapper {
         position: absolute;
         top: 0;
         left: auto;
