@@ -3846,7 +3846,7 @@ define([
                         return pos;
                     });
                 },
-
+                // jesse
                 _getItemMargins: function ListView_getItemMargins(type) {
                     type = type || _UI.ObjectType.item;
                     var that = this;
