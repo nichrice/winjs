@@ -3972,14 +3972,14 @@ define([
                             }
                             indexOfNextGroupItem = blocks.length * blockSize;
 
-                            // 2) Generate as many full itemblocks of containers as we can.                        
-                            var markup = "",
-                                newBlocksCount = Math.floor(toAdd / blockSize);
+                            // 2) Generate as many full itemblocks of containers as we can.
+                            var newBlocksCount = Math.floor(toAdd / blockSize),
+                                markup = "",
+                                firstBlockFirstItemIndex = indexOfNextGroupItem,
+                                secondBlockFirstItemIndex = indexOfNextGroupItem + blockSize;
                                 
                             if (newBlocksCount > 0) {
-                                var firstBlockFirstItemIndex = indexOfNextGroupItem,
-                                    secondBlockFirstItemIndex = indexOfNextGroupItem + blockSize,
-                                    pairOfItemBlocks = [
+                                var pairOfItemBlocks = [
                                     // Use pairs to ensure that the container striping pattern is maintained regardless if blockSize is even or odd.
                                     "<div class='win-itemsblock'>" + _Helpers._stripedContainers(blockSize, firstBlockFirstItemIndex) + "</div>",
                                     "<div class='win-itemsblock'>" + _Helpers._stripedContainers(blockSize, secondBlockFirstItemIndex) + "</div>"
