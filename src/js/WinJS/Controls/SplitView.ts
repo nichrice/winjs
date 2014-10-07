@@ -27,6 +27,7 @@ var ClassNames = {
 
     _rtl: "win-splitview-rtl",
     _panePlaceholder: "win-splitview-paneplaceholder",
+    _paneWrapper: "win-splitview-panewrapper",
     // placement
     _placementLeft: "win-splitview-placementleft",
     _placementRight: "win-splitview-placementright",
@@ -104,6 +105,107 @@ function measureTotalSize(element: HTMLElement) {
     }
 }
 
+function executeTransform(element: HTMLElement, transformTo: string): Promise<any> {
+    element.style.transition = "367ms transform cubic-bezier(0.1, 0.9, 0.2, 1)";
+    element.style.transform = transformTo;
+
+    return new Promise((c) => {
+        var finish = function () {
+            clearTimeout(timeoutId);
+            element.removeEventListener("transitionend", finish);
+            element.style.transition = "";
+            c();
+        };
+
+        // Watch dog timeout
+        var timeoutId = setTimeout(function () {
+            timeoutId = setTimeout(finish, 367);
+        }, 50);
+
+        element.addEventListener("transitionend", finish);
+    });
+}
+
+function growTransition(clipper: HTMLElement, grower: HTMLElement, from: number, to: number, axis: string, inverse: boolean): Promise<any> {
+    var diff = inverse ? to - from : from - to;
+    var translate = axis === "x" ? "translateX" : "translateY";
+    var size = axis === "x" ? "width" : "height";
+
+    // Set up
+    clipper.style[size] = to + "px";
+    clipper.style.transform = translate + "(" + diff + "px)";
+    grower.style[size] = to + "px";
+    grower.style.transform = translate + "(" + -diff + "px)";
+
+    // Resolve styles
+    getComputedStyle(clipper).opacity;
+    getComputedStyle(grower).opacity;
+    
+    // Animate
+    return Promise.join([
+        executeTransform(clipper,  ""),
+        executeTransform(grower, "")
+    ]).then(function () {
+        clipper.style[size] = "";
+        clipper.style.transform = "";
+        grower.style[size] = "";
+        grower.style.transform = "";
+    });
+}
+
+function shrinkTransition(clipper: HTMLElement, grower: HTMLElement, from: number, to: number, axis: string, inverse: boolean): Promise<any> {
+    var diff = inverse ? from - to : to - from;
+    var translate = axis === "x" ? "translateX" : "translateY";
+
+    // Set up
+    clipper.style.transform = "";
+    grower.style.transform = "";
+
+    // Resolve styles
+    getComputedStyle(clipper).opacity;
+    getComputedStyle(grower).opacity;
+
+    // Animate
+    return Promise.join([
+        executeTransform(clipper, translate + "(" + diff + "px)"),
+        executeTransform(grower, translate  + "(" + -diff + "px)")
+    ]).then(function () {
+        clipper.style.transform = "";
+        grower.style.transform = "";
+    });
+}
+
+function resizeTransition(clipper: HTMLElement, grower: HTMLElement, from: number, to: number, axis: string, inverse: boolean): Promise<any> {
+    if (to > from) {
+        return growTransition(clipper, grower, from, to, axis, inverse);
+    } else if (to < from) {
+        return shrinkTransition(clipper, grower, from, to, axis, inverse);
+    }
+}
+
+function makeArray(elements: any): any {
+    if (Array.isArray(elements) || elements instanceof (<any>_Global).NodeList || elements instanceof (<any>_Global).HTMLCollection) {
+        return elements;
+    } else if (elements) {
+        return [elements];
+    } else {
+        return [];
+    }
+}
+
+function showEdgeUI(elements: any, offsets: any): Promise<any> {
+    return Animations.showEdgeUI(elements, offsets, { mechanism: "transition" });
+}
+
+function hideEdgeUI(elements: any, offsets: any): Promise<any> {
+    return Animations.hideEdgeUI(elements, offsets, { mechanism: "transition" }).then(function () {
+        elements = makeArray(elements);
+        elements.forEach((e: HTMLElement) => {
+            e.style.transform = "";
+        });
+    });
+}
+
 /// <field>
 /// <summary locid="WinJS.UI.SplitView">
 /// Displays a modal dialog which can display arbitrary HTML content.
@@ -127,7 +229,13 @@ function measureTotalSize(element: HTMLElement) {
 /// <resource type="css" src="//$(TARGET_DESTINATION)/css/ui-dark.css" shared="true" />
 export class SplitView {
     private _disposed: boolean;
-    private _dom: any;
+    private _dom: {
+        root: HTMLElement;
+        pane: HTMLElement;
+        paneWrapper: HTMLElement;
+        panePlaceholder: HTMLElement;
+        content: HTMLElement; 
+    };
     private _rtl: boolean;
 
     constructor(element?: HTMLElement, options: any = {}) {
@@ -276,23 +384,34 @@ export class SplitView {
         if (this.shownDisplayMode === ShownDisplayMode.inline) {
             var size = measureContentSize(this._dom.content);
         }
+        var hiddenPaneSize = measureContentSize(this._dom.pane); 
+        var peek = this._horizontal ? hiddenPaneSize.width > 0 : hiddenPaneSize.height > 0;
         
         this._showPane();
         this._updateUI();
-        if (this.shownDisplayMode === ShownDisplayMode.overlay) {
-            Animations.showEdgeUI(this._dom.pane, this._getAnimationOffsets());
-        } else {
-            // TODO: rtl
-            if (this.placement === Placement.top || this.placement === Placement.left) {
-                this._lockContent(size);
-                Animations.showEdgeUI([this._dom.pane, this._dom.content], this._getAnimationOffsets()).then(() => {
-                    this._unlockContent();
-                });
+        if (peek) {
+            var shownPaneSize = measureContentSize(this._dom.pane);
+            if (this._horizontal) {
+                resizeTransition(this._dom.paneWrapper, this._dom.pane, hiddenPaneSize.width, shownPaneSize.width, "x", this.placement === Placement.right);
             } else {
-                this._useAbsolutePane();
-                Animations.showEdgeUI(this._dom.pane, this._getAnimationOffsets()).then(() => {
-                    this._clearAbsolutePane();
-                });
+                resizeTransition(this._dom.paneWrapper, this._dom.pane, hiddenPaneSize.height, shownPaneSize.height, "y", this.placement === Placement.bottom);
+            }
+        } else {
+            if (this.shownDisplayMode === ShownDisplayMode.overlay) {
+                showEdgeUI(this._dom.paneWrapper, this._getAnimationOffsets());
+            } else {
+                // TODO: rtl
+                if (this.placement === Placement.top || this.placement === Placement.left) {
+                    this._lockContent(size);
+                    showEdgeUI([this._dom.paneWrapper, this._dom.content], this._getAnimationOffsets()).then(() => {
+                        this._unlockContent();
+                    });
+                } else {
+                    this._useAbsolutePane();
+                    showEdgeUI(this._dom.paneWrapper, this._getAnimationOffsets()).then(() => {
+                        this._clearAbsolutePane();
+                    });
+                }
             }
         }
     }
@@ -320,24 +439,24 @@ export class SplitView {
     }
     
     private _useAbsolutePane(): void {
-        this._dom.pane.style.position = "absolute";
-        this._dom.pane.style.left = this.placement === Placement.right ? "" : "0px";
-        this._dom.pane.style.right = this.placement === Placement.right ? "0px" : "";
-        this._dom.pane.style.top = this.placement === Placement.bottom ? "" : "0px";
-        this._dom.pane.style.bottom = this.placement === Placement.bottom ? "0px" : "";
-        this._dom.pane.style.height = this._horizontal ? "100%" : "";
-        this._dom.pane.style.width = this._horizontal ? "" : "100%";
+        this._dom.paneWrapper.style.position = "absolute";
+        this._dom.paneWrapper.style.left = this.placement === Placement.right ? "" : "0px";
+        this._dom.paneWrapper.style.right = this.placement === Placement.right ? "0px" : "";
+        this._dom.paneWrapper.style.top = this.placement === Placement.bottom ? "" : "0px";
+        this._dom.paneWrapper.style.bottom = this.placement === Placement.bottom ? "0px" : "";
+        this._dom.paneWrapper.style.height = this._horizontal ? "100%" : "";
+        this._dom.paneWrapper.style.width = this._horizontal ? "" : "100%";
         
     }
     
     private _clearAbsolutePane(): void {
-        this._dom.pane.style.position = "";
-        this._dom.pane.style.left = "";
-        this._dom.pane.style.right = "";
-        this._dom.pane.style.top = "";
-        this._dom.pane.style.bottom = "";
-        this._dom.pane.style.height = "";
-        this._dom.pane.style.width = "";
+        this._dom.paneWrapper.style.position = "";
+        this._dom.paneWrapper.style.left = "";
+        this._dom.paneWrapper.style.right = "";
+        this._dom.paneWrapper.style.top = "";
+        this._dom.paneWrapper.style.bottom = "";
+        this._dom.paneWrapper.style.height = "";
+        this._dom.paneWrapper.style.width = "";
     }
 
     hidePane(): void {
@@ -346,26 +465,37 @@ export class SplitView {
         /// Hides the SplitView's pane.
         /// </summary>
         /// </signature>
+        var hiddenPaneSize = this._measureHiddenPane(); 
+        var peek = this._horizontal ? hiddenPaneSize.width > 0 : hiddenPaneSize.height > 0;
         var p = Promise.wrap(null);
         
-        if (this.shownDisplayMode === ShownDisplayMode.overlay) {
-            p = Animations.hideEdgeUI(this._dom.pane, this._getAnimationOffsets());
-        } else {
+        if (peek) {
+            var shownPaneSize = measureContentSize(this._dom.pane);
             if (this._horizontal) {
-                var elements = this.placement === Placement.left ? [this._dom.pane, this._dom.content] : [this._dom.pane];
-                p = Animations.hideEdgeUI(elements, this._getAnimationOffsets());
+                p = resizeTransition(this._dom.paneWrapper, this._dom.pane, shownPaneSize.width, hiddenPaneSize.width, "x", this.placement === Placement.right);
             } else {
-                var elements = this.placement === Placement.top ? [this._dom.pane, this._dom.content] : [this._dom.pane];
-                this._lockContent(this._measureHiddenContent());
-                if (this.placement === Placement.bottom) {
-                    this._useAbsolutePane();
-                }
-                p = Animations.hideEdgeUI(elements, this._getAnimationOffsets()).then(() => {
+                p = resizeTransition(this._dom.paneWrapper, this._dom.pane, shownPaneSize.height, hiddenPaneSize.height, "y", this.placement === Placement.bottom);
+            }
+        } else {
+            if (this.shownDisplayMode === ShownDisplayMode.overlay) {
+                p = hideEdgeUI(this._dom.paneWrapper, this._getAnimationOffsets());
+            } else {
+                if (this._horizontal) {
+                    var elements = this.placement === Placement.left ? [this._dom.paneWrapper, this._dom.content] : [this._dom.paneWrapper];
+                    p = hideEdgeUI(elements, this._getAnimationOffsets());
+                } else {
+                    var elements = this.placement === Placement.top ? [this._dom.paneWrapper, this._dom.content] : [this._dom.paneWrapper];
+                    this._lockContent(this._measureHiddenContent());
                     if (this.placement === Placement.bottom) {
-                        this._clearAbsolutePane();
+                        this._useAbsolutePane();
                     }
-                    this._unlockContent();
-                });
+                    p = hideEdgeUI(elements, this._getAnimationOffsets()).then(() => {
+                        if (this.placement === Placement.bottom) {
+                            this._clearAbsolutePane();
+                        }
+                        this._unlockContent();
+                    });
+                }
             }
         }
         p.done(() => { 
@@ -386,7 +516,11 @@ export class SplitView {
 
         var contentEl = <HTMLElement>root.querySelector("." + ClassNames.content) || _Global.document.createElement("div");
         _ElementUtilities.addClass(contentEl, ClassNames.content);
-
+        
+        var paneWrapperEl = _Global.document.createElement("div");
+        paneWrapperEl.className = ClassNames._paneWrapper;
+        paneWrapperEl.appendChild(paneEl);
+        
         var panePlaceholderEl = _Global.document.createElement("div");
         panePlaceholderEl.className = ClassNames._panePlaceholder;
 
@@ -403,6 +537,7 @@ export class SplitView {
         this._dom = {
             root: root,
             pane: paneEl,
+            paneWrapper: paneWrapperEl,
             panePlaceholder: panePlaceholderEl,
             content: contentEl
         };
@@ -415,11 +550,11 @@ export class SplitView {
             // TODO: restore focus?
             if (paneShouldBeFirst) {
                 this._dom.root.appendChild(this._dom.panePlaceholder);
-                this._dom.root.appendChild(this._dom.pane);
+                this._dom.root.appendChild(this._dom.paneWrapper);
                 this._dom.root.appendChild(this._dom.content);
             } else {
                 this._dom.root.appendChild(this._dom.content);
-                this._dom.root.appendChild(this._dom.pane);
+                this._dom.root.appendChild(this._dom.paneWrapper);
                 this._dom.root.appendChild(this._dom.panePlaceholder);
             }
         }
