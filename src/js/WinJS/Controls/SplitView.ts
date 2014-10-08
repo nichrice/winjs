@@ -126,15 +126,15 @@ function executeTransform(element: HTMLElement, transformTo: string): Promise<an
     });
 }
 
-function growTransition(clipper: HTMLElement, grower: HTMLElement, from: number, to: number, axis: string, inverse: boolean): Promise<any> {
-    var diff = inverse ? to - from : from - to;
-    var translate = axis === "x" ? "translateX" : "translateY";
-    var size = axis === "x" ? "width" : "height";
+function growTransition(clipper: HTMLElement, grower: HTMLElement, options: { from: number; to: number; dimension: string; inverted: boolean; }): Promise<any> {
+    var diff = options.inverted ? options.to - options.from : options.from - options.to;
+    var translate = options.dimension === "width" ? "translateX" : "translateY";
+    var size = options.dimension;
 
     // Set up
-    clipper.style[size] = to + "px";
+    clipper.style[size] = options.to + "px";
     clipper.style.transform = translate + "(" + diff + "px)";
-    grower.style[size] = to + "px";
+    grower.style[size] = options.to + "px";
     grower.style.transform = translate + "(" + -diff + "px)";
 
     // Resolve styles
@@ -153,9 +153,9 @@ function growTransition(clipper: HTMLElement, grower: HTMLElement, from: number,
     });
 }
 
-function shrinkTransition(clipper: HTMLElement, grower: HTMLElement, from: number, to: number, axis: string, inverse: boolean): Promise<any> {
-    var diff = inverse ? from - to : to - from;
-    var translate = axis === "x" ? "translateX" : "translateY";
+function shrinkTransition(clipper: HTMLElement, grower: HTMLElement, options: { from: number; to: number; dimension: string; inverted: boolean; }): Promise<any> {
+    var diff = options.inverted ? options.from - options.to : options.to - options.from;
+    var translate = options.dimension === "width" ? "translateX" : "translateY";
 
     // Set up
     clipper.style.transform = "";
@@ -175,11 +175,11 @@ function shrinkTransition(clipper: HTMLElement, grower: HTMLElement, from: numbe
     });
 }
 
-function resizeTransition(clipper: HTMLElement, grower: HTMLElement, from: number, to: number, axis: string, inverse: boolean): Promise<any> {
-    if (to > from) {
-        return growTransition(clipper, grower, from, to, axis, inverse);
-    } else if (to < from) {
-        return shrinkTransition(clipper, grower, from, to, axis, inverse);
+function resizeTransition(clipper: HTMLElement, grower: HTMLElement, options: { from: number; to: number; dimension: string; inverted: boolean; }): Promise<any> {
+    if (options.to > options.from) {
+        return growTransition(clipper, grower, options);
+    } else if (options.to < options.from) {
+        return shrinkTransition(clipper, grower, options);
     }
 }
 
@@ -384,18 +384,20 @@ export class SplitView {
         if (this.shownDisplayMode === ShownDisplayMode.inline) {
             var size = measureContentSize(this._dom.content);
         }
-        var hiddenPaneSize = measureContentSize(this._dom.pane); 
+        var hiddenPaneSize = measureContentSize(this._dom.pane);
         var peek = this._horizontal ? hiddenPaneSize.width > 0 : hiddenPaneSize.height > 0;
         
         this._showPane();
         this._updateUI();
         if (peek) {
             var shownPaneSize = measureContentSize(this._dom.pane);
-            if (this._horizontal) {
-                resizeTransition(this._dom.paneWrapper, this._dom.pane, hiddenPaneSize.width, shownPaneSize.width, "x", this.placement === Placement.right);
-            } else {
-                resizeTransition(this._dom.paneWrapper, this._dom.pane, hiddenPaneSize.height, shownPaneSize.height, "y", this.placement === Placement.bottom);
-            }
+            var dim = this._horizontal ? "width" : "height";
+            resizeTransition(this._dom.paneWrapper, this._dom.pane, {
+                from: hiddenPaneSize[dim],
+                to: shownPaneSize[dim],
+                dimension: dim,
+                inverted: this.placement === Placement.right || this.placement === Placement.bottom
+            });
         } else {
             if (this.shownDisplayMode === ShownDisplayMode.overlay) {
                 showEdgeUI(this._dom.paneWrapper, this._getAnimationOffsets());
@@ -471,11 +473,13 @@ export class SplitView {
         
         if (peek) {
             var shownPaneSize = measureContentSize(this._dom.pane);
-            if (this._horizontal) {
-                p = resizeTransition(this._dom.paneWrapper, this._dom.pane, shownPaneSize.width, hiddenPaneSize.width, "x", this.placement === Placement.right);
-            } else {
-                p = resizeTransition(this._dom.paneWrapper, this._dom.pane, shownPaneSize.height, hiddenPaneSize.height, "y", this.placement === Placement.bottom);
-            }
+            var dim = this._horizontal ? "width" : "height";
+            p = resizeTransition(this._dom.paneWrapper, this._dom.pane, {
+                from: shownPaneSize[dim],
+                to: hiddenPaneSize[dim],
+                dimension: dim,
+                inverted: this.placement === Placement.right || this.placement === Placement.bottom
+            });
         } else {
             if (this.shownDisplayMode === ShownDisplayMode.overlay) {
                 p = hideEdgeUI(this._dom.paneWrapper, this._getAnimationOffsets());
