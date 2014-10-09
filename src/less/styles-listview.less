@@ -23,6 +23,7 @@
     z-index: 0;
     -ms-overflow-style: -ms-autohiding-scrollbar;
     -webkit-overflow-scrolling: touch;
+    white-space: nowrap;
 }
 .win-listview > .win-viewport.win-horizontal {
     overflow-x: auto;
@@ -137,6 +138,18 @@ html.win-hoverable .win-container.win-selected:hover .win-selectionborder {
 .win-listview .win-groupheadercontainer {
     z-index: 1;
     touch-action:pan-x pan-y pinch-zoom;
+    overflow: hidden;
+}
+.win-listview .win-horizontal .win-listheadercontainer,
+.win-listview .win-horizontal .win-listfootercontainer {
+    height: 100%;
+    display: inline-block;
+    overflow: hidden;
+}
+.win-listview .win-vertical .win-listheadercontainer,
+.win-listview .win-vertical .win-listfootercontainer {
+    width: 100%;
+    display: block;
     overflow: hidden;
 }
 .win-listview .win-groupheader.win-focused {
@@ -290,6 +303,25 @@ html.win-hoverable .win-container.win-selected:hover .win-selectionborder {
     #flex > .flex-flow(row; wrap);
     #flex > .align-content(flex-start);
 }
+
+//
+// All uniform layouts using structural nodes (Grid/List), once we've detected any bugs in the enviornment for nested flexboxes.
+// ListView will put all containers in one itemsblock, so the padder is never used.
+//
+.win-listview .win-vertical,
+.win-listview .win-horizontal {
+    .win-structuralnodes.win-single-itemsblock.win-listlayout .win-itemscontainer.win-laidout,
+    .win-structuralnodes.win-single-itemsblock.win-gridlayout .win-uniformgridlayout.win-itemscontainer.win-laidout {
+        // Itemsblocks will already be styled as flexboxes elsewhere in the file. 
+        // Display the itemscontainer "block" since it will only contain one giant itemsblock.
+        display: block;
+
+        .win-itemscontainer-padder {
+            display: none;
+        }
+    }
+}
+
 
 //
 // ListLayout

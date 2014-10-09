@@ -119,10 +119,7 @@ module WinJSTests {
                 LiveUnit.Assert.areEqual(container, listView._view.tree[0].itemsContainer.items[i]);
             }
 
-            listView._view.finalItem().then(function (lastItem) {
-                LiveUnit.Assert.areEqual(containers.length - 1, lastItem);
-            });
-
+            LiveUnit.Assert.areEqual(containers.length - 1, listView._view.lastItemIndex());
         } else {
             var blocks = listView._view.tree[0].itemsContainer.itemsBlocks;
             for (var i = 0, itemIndex = 0, len = blocks.length; i < len; i++) {
@@ -134,8 +131,6 @@ module WinJSTests {
                     LiveUnit.Assert.areEqual(listView._view.containers[itemIndex++], block.items[n]);
                 }
             }
-
-            // Only do this in the structural node case until we can support both.
             verifyContainerStripesByIndex(listView);
         }
     }
@@ -239,11 +234,9 @@ module WinJSTests {
                 }
             }
 
-            listView._view.finalItem().then(function (lastItem) {
-                LiveUnit.Assert.areEqual(containers.length - 1, lastItem);
-            });
+
+            LiveUnit.Assert.areEqual(containers.length - 1, listView._view.lastItemIndex());
         } else {
-            // Only do this in the structural node case until we can support both.
             verifyContainerStripesByIndex(listView);
         }
 
@@ -560,7 +553,7 @@ module WinJSTests {
         return items;
     }
 
-    function verifyContainerStripesByIndex(listView) {        
+    function verifyContainerStripesByIndex(listView) {
 
         // Check correctness in each group
         var groups = [].slice.call(listView.element.querySelectorAll(".win-itemscontainer"));
@@ -619,13 +612,16 @@ module WinJSTests {
 
     function getPairWiseConfigurationsForBigDataStripeTests() {
 
+        // We use this instead of the larger BIG_DATASET constant, otherwise FireFox takes too long and the test times out.
+        var bigDataSize = 3000;
+
         // Couple the itemDataSource and groupDataSource together to avoid scenarios that might pair smallDataSource together with bigGroupedDataSource
         function generateBigDataSources() {
-            var bigList = new WinJS.Binding.List(initData(BIG_DATASET));
+            var bigList = new WinJS.Binding.List(initData(bigDataSize));
             return { itemDataSource: bigList.dataSource, groupDataSource: null }
         }
         function generateBigGroupedDataSources() {
-            var bigGroupedList = new WinJS.Binding.List(initData(BIG_DATASET)).createGrouped(groupKey, groupData);
+            var bigGroupedList = new WinJS.Binding.List(initData(bigDataSize)).createGrouped(groupKey, groupData);
             return { itemDataSource: bigGroupedList.dataSource, groupDataSource: bigGroupedList.groups.dataSource };
         }
 
@@ -4356,7 +4352,7 @@ module WinJSTests {
 
             VirtualizeContentsViewTestHost.appendChild(wrapper);
 
-                Helper.ListView.waitForReady(zoomedIn, -1)().then(function () {
+            Helper.ListView.waitForReady(zoomedIn, -1)().then(function () {
                 sezo.zoomedOut = true;
             });
         };
@@ -5291,12 +5287,12 @@ module WinJSTests {
             lv.itemDataSource = list.dataSource;
             VirtualizeContentsViewTestHost.appendChild(lv.element);
 
-        Helper.ListView.waitForReady(lv, 1000)().then(function () {
+            Helper.ListView.waitForReady(lv, 1000)().then(function () {
                 lv.currentItem = { type: WinJS.UI.ObjectType.item, index: 2, hasFocus: true };
-            return Helper.ListView.waitForReady(lv, -1)();
+                return Helper.ListView.waitForReady(lv, -1)();
             }).then(function () {
                     lv.itemDataSource.remove("2");
-                return Helper.ListView.waitForReady(lv, -1)();
+                    return Helper.ListView.waitForReady(lv, -1)();
                 }).done(function () {
                     LiveUnit.Assert.isTrue(document.activeElement);
                     LiveUnit.Assert.isTrue((<HTMLElement>document.activeElement).classList.contains(WinJS.UI._itemClass));
@@ -5360,16 +5356,16 @@ module WinJSTests {
             var sezo = new WinJS.UI.SemanticZoom(sezoDiv);
             VirtualizeContentsViewTestHost.appendChild(wrapper);
 
-        Helper.ListView.waitForReady(zoomedIn, -1)().then(function () {
+            Helper.ListView.waitForReady(zoomedIn, -1)().then(function () {
                 if (scrollToEnd) {
                     zoomedIn.scrollPosition = Number.MAX_VALUE;
                 }
-            return Helper.ListView.waitForReady(zoomedIn, -1)();
+                return Helper.ListView.waitForReady(zoomedIn, -1)();
             }).then(function () {
                     glist.dataSource[operation].apply(glist.dataSource, operationArgs);
                     sezo.zoomedOut = true;
 
-                return Helper.ListView.waitForReady(zoomedIn, -1)();
+                    return Helper.ListView.waitForReady(zoomedIn, -1)();
                 }).done(function () {
                     WinJS.Utilities.disposeSubTree(wrapper);
                     VirtualizeContentsViewTestHost.removeChild(wrapper);
@@ -5434,20 +5430,20 @@ module WinJSTests {
 
         listView.scrollPosition = 10 * itemHeight;
 
-    return Helper.ListView.waitForDeferredAction(listView)().then(function () {
+        return Helper.ListView.waitForDeferredAction(listView)().then(function () {
             LiveUnit.Assert.areEqual(30, listView.element.querySelectorAll(".win-container").length);
 
             verifyBlockInDom(listView, [1, 2, 3]);
 
             listView.scrollPosition = 30 * itemHeight;
-        return Helper.ListView.waitForDeferredAction(listView)();
+            return Helper.ListView.waitForDeferredAction(listView)();
         }).then(function () {
                 LiveUnit.Assert.areEqual(30, listView.element.querySelectorAll(".win-container").length);
 
                 verifyBlockInDom(listView, [3, 4, 5]);
 
                 listView.scrollPosition = 20 * itemHeight;
-            return Helper.ListView.waitForDeferredAction(listView)();
+                return Helper.ListView.waitForDeferredAction(listView)();
             }).then(function () {
                 LiveUnit.Assert.areEqual(30, listView.element.querySelectorAll(".win-container").length);
 
@@ -5461,7 +5457,7 @@ module WinJSTests {
 
         listView.scrollPosition = 40 * itemHeight;
 
-    return Helper.ListView.waitForReady(listView, -1)().then(function () {
+        return Helper.ListView.waitForReady(listView, -1)().then(function () {
             LiveUnit.Assert.areEqual(10, listView.element.querySelectorAll(".win-container").length);
 
             verifyBlockInDom(listView, [4]);
@@ -5474,14 +5470,14 @@ module WinJSTests {
 
         listView.scrollPosition = 30 * itemHeight;
 
-    return Helper.ListView.waitForDeferredAction(listView)().then(function () {
+        return Helper.ListView.waitForDeferredAction(listView)().then(function () {
             LiveUnit.Assert.areEqual(60, listView.element.querySelectorAll(".win-container").length);
 
             verifyBlockInDom(listView, [3, 4, 5, 6, 7, 8]);
 
             listView.scrollPosition = 10 * itemHeight;
 
-        return Helper.ListView.waitForDeferredAction(listView)();
+            return Helper.ListView.waitForDeferredAction(listView)();
         }).then(function () {
                 LiveUnit.Assert.areEqual(60, listView.element.querySelectorAll(".win-container").length);
 
@@ -5495,7 +5491,7 @@ module WinJSTests {
 
         listView.ensureVisible(15);
 
-    return Helper.ListView.waitForDeferredAction(listView)().then(function () {
+        return Helper.ListView.waitForDeferredAction(listView)().then(function () {
 
             LiveUnit.Assert.areEqual(20, listView.element.querySelectorAll(".win-container").length);
 
@@ -5532,10 +5528,10 @@ module WinJSTests {
     function generateTestContainerStripesAfterEdits(name, getLayout, getDataSources) {
 
         var layout = getLayout();
-        if (!layout['_usingStructuralNodes']) { return; } //TODO Remove this check once we have edits support for item striping without structural nodes.
+        if (!layout['_usingStructuralNodes']) { return; }
 
         VirtualizedViewTests.prototype["testContainerStripesAfterEdits" + name] = function (complete) {
-           
+
             var dataSources = getDataSources();
 
             var placeholder = createListViewElement();
@@ -5569,7 +5565,7 @@ module WinJSTests {
                     list.shift();
                     list.pop();
 
-                return Helper.ListView.waitForAllContainers(listView);
+                    return Helper.ListView.waitForAllContainers(listView);
                 }).then(function () {
                     verifyContainerStripesByIndex(listView);
 

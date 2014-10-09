@@ -182,8 +182,8 @@ define([
                     }
                 },
 
-                finalItem: function VirtualizeContentsView_finalItem() {
-                    return this.containers ? Promise.wrap(this.containers.length - 1) : Promise.cancel;
+                lastItemIndex: function VirtualizeContentsView_lastItemIndex() {
+                    return (this.containers ? (this.containers.length - 1) : -1);
                 },
 
                 _setSkipRealizationForChange: function (skip) {
@@ -278,6 +278,7 @@ define([
 
                                 var container = that.getContainer(itemIndex);
                                 if (itemBox.parentNode !== container) {
+                                    itemData.container = container;
                                     that._appendAndRestoreFocus(container, itemBox);
 
                                     appendItemsCount++;
@@ -286,7 +287,6 @@ define([
                                     }
                                     lastIndex = itemIndex;
 
-                                    itemData.container = container;
                                     if (that._listView._isSelected(itemIndex)) {
                                         _ElementUtilities.addClass(container, _Constants._selectedClass);
                                     }
@@ -806,7 +806,7 @@ define([
                     this._listView._writeProfilerMark("_unrealizeItem(" + itemIndex + "),info");
 
                     var focused = listView._selection._getFocused();
-                    if (focused.type !== _UI.ObjectType.groupHeader && focused.index === itemIndex) {
+                    if (focused.type === _UI.ObjectType.item && focused.index === itemIndex) {
                         listView._unsetFocusOnItem();
                         focusedItemPurged = true;
                     }
@@ -1262,6 +1262,10 @@ define([
                 // Update the ARIA attributes on item that are needed so that Narrator can announce it.
                 // item must be in the items container.
                 updateAriaForAnnouncement: function VirtualizeContentsView_updateAriaForAnnouncement(item, count) {
+                    if (item === this._listView.listHeader || item === this._listView.listFooter) {
+                        return;
+                    }
+
                     var index = -1;
                     var type = _UI.ObjectType.item;
                     if (_ElementUtilities.hasClass(item, _Constants._headerClass)) {
@@ -1892,6 +1896,10 @@ define([
 
                 waitForEntityPosition: function VirtualizeContentsView_waitForEntityPosition(entity) {
                     var that = this;
+                    if (entity.type === _UI.ObjectType.listHeader || entity.type === _UI.ObjectType.listFooter) {
+                        // Headers and footers are always laid out by the ListView as soon as it gets them, so there's nothing to wait on
+                        return Promise.wrap();
+                    }
                     this._listView._writeProfilerMark(this._state.name + "_waitForEntityPosition" + "(" + entity.type + ": " + entity.index + ")" + ",info");
                     return Promise._cancelBlocker(this._state.waitForEntityPosition(entity).then(function () {
                         if ((entity.type !== _UI.ObjectType.groupHeader && entity.index >= that.containers.length) ||
@@ -2057,10 +2065,9 @@ define([
                     function addToGroup(itemsContainer, groupSize) {
                         var children = itemsContainer.element.children,
                             oldSize = children.length,
-                            toAdd = Math.min(groupSize - itemsContainer.items.length, chunkSize),
-                            containersMarkup = _Helpers._stripedContainers(toAdd, itemsContainer.items.length);
+                            toAdd = Math.min(groupSize - itemsContainer.items.length, chunkSize);
 
-                        _SafeHtml.insertAdjacentHTMLUnsafe(itemsContainer.element, "beforeend", containersMarkup);
+                        _SafeHtml.insertAdjacentHTMLUnsafe(itemsContainer.element, "beforeend", _Helpers._repeat("<div class='win-container win-backdrop'></div>", toAdd));
 
                         for (var i = 0; i < toAdd; i++) {
                             var container = children[oldSize + i];
@@ -2111,6 +2118,8 @@ define([
                         var indexOfNextGroupItem;
                         var lastExistingBlock = itemsContainer.itemsBlocks.length ? itemsContainer.itemsBlocks[itemsContainer.itemsBlocks.length - 1] : null;
 
+                        toAdd = Math.min(toAdd, chunkSize);
+
                         // 1) Add missing containers to the latest itemsblock if it was only partially filled during the previous pass.
                         if (lastExistingBlock && lastExistingBlock.items.length < blockSize) {
                             var emptySpotsToFill = Math.min(toAdd, blockSize - lastExistingBlock.items.length),
@@ -2132,27 +2141,25 @@ define([
                         }
                         indexOfNextGroupItem = itemsContainer.itemsBlocks.length * blockSize;
 
-                        if (toAdd > chunkSize) {
-                            toAdd = Math.min(toAdd, Math.max(1, Math.floor(chunkSize / blockSize)) * blockSize);
-                        }
-
-                        // 2) Generate as many full itemblocks of containers as we can.                        
+                        // 2) Generate as many full itemblocks of containers as we can.
                         var newBlocksCount = Math.floor(toAdd / blockSize),
                             markup = "",
                             firstBlockFirstItemIndex = indexOfNextGroupItem,
                             secondBlockFirstItemIndex = indexOfNextGroupItem + blockSize;
 
-                        var pairOfItemBlocks = [
-                            // Use pairs to ensure that the container striping pattern is maintained regardless if blockSize is even or odd.
-                            "<div class='win-itemsblock'>" + _Helpers._stripedContainers(blockSize, firstBlockFirstItemIndex) + "</div>",
-                            "<div class='win-itemsblock'>" + _Helpers._stripedContainers(blockSize, secondBlockFirstItemIndex) + "</div>"
-                        ];
-                        markup = _Helpers._repeat(pairOfItemBlocks, newBlocksCount);
-                        indexOfNextGroupItem += (newBlocksCount * blockSize);
+                        if (newBlocksCount > 0) {
+                            var pairOfItemBlocks = [
+                                // Use pairs to ensure that the container striping pattern is maintained regardless if blockSize is even or odd.
+                                "<div class='win-itemsblock'>" + _Helpers._stripedContainers(blockSize, firstBlockFirstItemIndex) + "</div>",
+                                "<div class='win-itemsblock'>" + _Helpers._stripedContainers(blockSize, secondBlockFirstItemIndex) + "</div>"
+                            ];
+                            markup = _Helpers._repeat(pairOfItemBlocks, newBlocksCount);
+                            indexOfNextGroupItem += (newBlocksCount * blockSize);
+                        }
 
                         // 3) Generate and partially fill, one last itemblock if there are any remaining containers to add.
                         var sizeOfNewLastBlock = toAdd % blockSize;
-                        if (sizeOfNewLastBlock) {
+                        if (sizeOfNewLastBlock > 0) {
                             markup += "<div class='win-itemsblock'>" + _Helpers._stripedContainers(sizeOfNewLastBlock, indexOfNextGroupItem) + "</div>";
                             indexOfNextGroupItem += sizeOfNewLastBlock;
                             newBlocksCount++;
@@ -2533,6 +2540,7 @@ define([
                             itemBox = itemData.itemBox;
 
                         if (itemBox && container) {
+                            itemData.container = container;
                             if (itemBox.parentNode !== container) {
                                 if (index >= that.firstIndexDisplayed && index <= that.lastIndexDisplayed) {
                                     that._appendAndRestoreFocus(container, itemBox);
@@ -2541,7 +2549,6 @@ define([
                                 }
                             }
                             _ElementUtilities.removeClass(container, _Constants._backdropClass);
-                            itemData.container = container;
 
                             _ElementUtilities[that._listView.selection._isIncluded(index) ? "addClass" : "removeClass"](container, _Constants._selectedClass);
                             if (!that._listView.selection._isIncluded(index) && _ElementUtilities.hasClass(itemBox, _Constants._selectedClass)) {
