@@ -357,7 +357,7 @@ define([
                         return this._view.maxLeadingPages;
                     },
                     set: function ListView_setMaxLeadingPages(value) {
-                        this._view.maxLeadingPages = Math.min(0, parseInt(value));
+                        this._view.maxLeadingPages = Math.max(0, parseInt(value));
                     },
                 },
 
@@ -367,7 +367,7 @@ define([
                         return this._view.maxTrailingPages;
                     },
                     set: function ListView_setMaxTrailingPages(value) {
-                        this._view.maxTrailingPages = Math.min(0, parseInt(value));
+                        this._view.maxTrailingPages = Math.max(0, parseInt(value));
                     },
                 },
 
