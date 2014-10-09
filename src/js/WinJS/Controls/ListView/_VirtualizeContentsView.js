@@ -1642,8 +1642,8 @@ define([
                         this.maxLeadingPages = _VirtualizeContentsView._iOSPagesToPrefetch;
                         this.maxTrailingPages = _VirtualizeContentsView._iOSPagesToRetain;
                     } else {
-                        this.maxLeadingPages = _VirtualizeContentsView._pagesToPrefetch;
-                        this.maxTrailingPages = _VirtualizeContentsView._pagesToPrefetch;
+                        this.maxLeadingPages = _VirtualizeContentsView._defaultPagesToPrefetch;
+                        this.maxTrailingPages = _VirtualizeContentsView._defaultPagesToPrefetch;
                     }
                 },
 
@@ -1713,7 +1713,7 @@ define([
                             if (that._listView._zooming) {
                                 pagesBefore = pagesAfter = 0;
                             } else if(_VirtualizeContentsView._disableCustomPagesPrefetch) {
-                                pagesBefore = pagesAfter = _VirtualizeContentsView._pagesToPrefetch;
+                                pagesBefore = pagesAfter = _VirtualizeContentsView._defaultPagesToPrefetch;
                             } else {
                                 pagesBefore = (that._direction === "left" ? pagesToPrefetch : pagesToRetain);
 
@@ -2708,7 +2708,7 @@ define([
                     });
                 }
             }, {
-                _pagesToPrefetch: 2,
+                _defaultPagesToPrefetch: 2,
                 _iOSPagesToPrefetch: 6,
                 _iOSPagesToRetain: 2,
                 _disableCustomPagesPrefetch: false,

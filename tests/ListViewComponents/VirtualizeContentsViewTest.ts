@@ -663,7 +663,7 @@ module WinJSTests {
             document.body.appendChild(testRootEl);
             defaultChunkSize = WinJS.UI._VirtualizeContentsView._chunkSize;
             defaultMaxTime = WinJS.UI._VirtualizeContentsView._maxTimePerCreateContainers;
-            defaultPagesToPrefetch = WinJS.UI._VirtualizeContentsView._pagesToPrefetch;
+            defaultPagesToPrefetch = WinJS.UI._VirtualizeContentsView._defaultPagesToPrefetch;
             //WinBlue: 298587
             WinJS.UI._VirtualizeContentsView._maxTimePerCreateContainers = Number.MAX_VALUE;
             defaultDisableCustomPagesPrefetch = WinJS.UI._VirtualizeContentsView._disableCustomPagesPrefetch;
@@ -680,7 +680,7 @@ module WinJSTests {
             document.body.removeChild(testRootEl);
             WinJS.UI._VirtualizeContentsView._chunkSize = defaultChunkSize;
             WinJS.UI._VirtualizeContentsView._maxTimePerCreateContainers = defaultMaxTime;
-            WinJS.UI._VirtualizeContentsView._pagesToPrefetch = defaultPagesToPrefetch;
+            WinJS.UI._VirtualizeContentsView._defaultPagesToPrefetch = defaultPagesToPrefetch;
             WinJS.UI._VirtualizeContentsView._disableCustomPagesPrefetch = defaultDisableCustomPagesPrefetch;
             WinJS.Utilities._setIsiOS(defaultIsiOS);
         };
@@ -5048,7 +5048,7 @@ module WinJSTests {
     function generateDomTrimTest(name, data, groups, scrollbarPos, viewportHeight, verify) {
         VirtualizedViewTests.prototype["testDomTrim" + name] = function (complete) {
             WinJS.UI._VirtualizeContentsView._maxTimePerCreateContainers = Number.MAX_VALUE;
-            WinJS.UI._VirtualizeContentsView._pagesToPrefetch = 0;
+            WinJS.UI._VirtualizeContentsView._defaultPagesToPrefetch = 0;
             WinJS.UI._VirtualizeContentsView._disableCustomPagesPrefetch = true;
 
             var placeholder = createListViewElement();

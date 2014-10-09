@@ -381,7 +381,7 @@ define([
                 /// </field>
                 pagesToLoad: {
                     get: function () {
-                        return (_VirtualizeContentsView._VirtualizeContentsView._pagesToPrefetch * 2) + 1;
+                        return (_VirtualizeContentsView._VirtualizeContentsView._defaultPagesToPrefetch * 2) + 1;
                     },
                     set: function () {
                         _ElementUtilities._deprecated(_ErrorMessages.pagesToLoadIsDeprecated);
