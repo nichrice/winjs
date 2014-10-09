@@ -4935,8 +4935,8 @@ module WinJSTests {
             Helper.ListView.waitForReady(listView, -1)().then(function () {
                 elementsPerPage = (listView.indexOfLastVisible - listView.indexOfFirstVisible) + 1
 
-            // When we are at the top of the list (scroll:0), we should have the current viewport full of items + customMaxPages pages ahead
-            expectedRealizedCount = elementsPerPage + (customMaxPages * elementsPerPage);
+            // When we are at the top of the list (scroll:0), we should have the current viewport full of items + iosMaxPages pages ahead
+            expectedRealizedCount = elementsPerPage + (iosMaxPages * elementsPerPage);
                 LiveUnit.Assert.areEqual(expectedRealizedCount, placeholder.querySelectorAll(".win-container:not(.win-backdrop)").length);
 
                 // Scroll to the bottom of the current viewport
@@ -4945,19 +4945,19 @@ module WinJSTests {
                 return Helper.ListView.waitForDeferredAction(listView)();
             }).then(function () {
 
-                    // When our scroll position = viewPortHeight, we should have the current viewport full of items + up to 1 page behind + customMaxPages pages ahead
-                    expectedRealizedCount = (customMinPages > 0 ? elementsPerPage : 0)  /* up to 1 page behind*/  + elementsPerPage  /* viewport*/  + (customMaxPages * elementsPerPage);
+                    // When our scroll position = viewPortHeight, we should have the current viewport full of items + up to 1 page behind + iosMaxPages pages ahead
+                    expectedRealizedCount = (iosMinPages > 0 ? elementsPerPage : 0)  /* up to 1 page behind*/  + elementsPerPage  /* viewport*/  + (iosMaxPages * elementsPerPage);
                     LiveUnit.Assert.areEqual(expectedRealizedCount, placeholder.querySelectorAll(".win-container:not(.win-backdrop)").length);
 
-                    // Scroll down customMaxPages viewports
-                    listView.scrollPosition = customMaxPages * viewPortHeight;
+                    // Scroll down iosMaxPages viewports
+                    listView.scrollPosition = iosMaxPages * viewPortHeight;
 
                     return Helper.ListView.waitForDeferredAction(listView)();
                 }).then(function () {
-                    LiveUnit.Assert.areEqual(listView.indexOfFirstVisible, customMaxPages * elementsPerPage);
+                    LiveUnit.Assert.areEqual(listView.indexOfFirstVisible, iosMaxPages * elementsPerPage);
 
-                    // Since we are scrolling downward, we optimize the front buffer, so we should have customMinPages pages behind + current viewport + customMaxPages ahead
-                    expectedRealizedCount = (customMinPages * elementsPerPage) /* behind*/  + elementsPerPage  /* viewport*/  + (customMaxPages * elementsPerPage);
+                    // Since we are scrolling downward, we optimize the front buffer, so we should have iosMinPages pages behind + current viewport + iosMaxPages ahead
+                    expectedRealizedCount = (iosMinPages * elementsPerPage) /* behind*/  + elementsPerPage  /* viewport*/  + (iosMaxPages * elementsPerPage);
                     LiveUnit.Assert.areEqual(expectedRealizedCount, placeholder.querySelectorAll(".win-container:not(.win-backdrop)").length);
 
                     complete();

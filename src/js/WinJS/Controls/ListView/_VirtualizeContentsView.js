@@ -2716,8 +2716,8 @@ define([
                 }
             }, {
                 _defaultPagesToPrefetch: 2,
-                _iOSPagesToPrefetch: 6,
-                _iOSPagesToRetain: 2,
+                _iOSMaxLeadingPages: 6,
+                _iOSMaxTrailingPages: 2,
                 _disableCustomPagesPrefetch: false,
                 _waitForSeZoIntervalDuration: 100,
                 _waitForSeZoTimeoutDuration: 500,
