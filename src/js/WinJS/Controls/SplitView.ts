@@ -10,6 +10,7 @@ import _Hoverable = require('../Utilities/_Hoverable');
 import _ElementUtilities = require('../Utilities/_ElementUtilities');
 import Promise = require('../Promise');
 import Animations = require('../Animations');
+import _TransitionAnimation = require('../Animations/_TransitionAnimation');
 
 // TODO: Do we need to require 'require-style!less/controls'?
 
@@ -106,7 +107,8 @@ function measureTotalSize(element: HTMLElement) {
 }
 
 function executeTransform(element: HTMLElement, transformTo: string): Promise<any> {
-    element.style.transition = "367ms transform cubic-bezier(0.1, 0.9, 0.2, 1)";
+    var duration = 367 * _TransitionAnimation._animationFactor;
+    element.style.transition = duration + "ms transform cubic-bezier(0.1, 0.9, 0.2, 1)";
     element.style.transform = transformTo;
 
     return new Promise((c) => {
@@ -119,7 +121,7 @@ function executeTransform(element: HTMLElement, transformTo: string): Promise<an
 
         // Watch dog timeout
         var timeoutId = setTimeout(function () {
-            timeoutId = setTimeout(finish, 367);
+            timeoutId = setTimeout(finish, duration);
         }, 50);
 
         element.addEventListener("transitionend", finish);
@@ -237,6 +239,7 @@ export class SplitView {
         content: HTMLElement; 
     };
     private _rtl: boolean;
+    private _pushAnimation: boolean;
 
     constructor(element?: HTMLElement, options: any = {}) {
         /// <signature helpKeyword="WinJS.UI.SplitView.SplitView">
@@ -390,24 +393,60 @@ export class SplitView {
         this._showPane();
         this._updateUI();
         if (peek) {
-            var shownPaneSize = measureContentSize(this._dom.pane);
-            var dim = this._horizontal ? "width" : "height";
-            resizeTransition(this._dom.paneWrapper, this._dom.pane, {
-                from: hiddenPaneSize[dim],
-                to: shownPaneSize[dim],
-                dimension: dim,
-                inverted: this.placement === Placement.right || this.placement === Placement.bottom
-            });
+            if (this.shownDisplayMode === ShownDisplayMode.overlay) {
+                var shownPaneSize = measureContentSize(this._dom.pane);
+                var dim = this._horizontal ? "width" : "height";
+                resizeTransition(this._dom.paneWrapper, this._dom.pane, {
+                    from: hiddenPaneSize[dim],
+                    to: shownPaneSize[dim],
+                    dimension: dim,
+                    inverted: this.placement === Placement.right || this.placement === Placement.bottom
+                });
+            } else {
+                var shownPaneSize = measureContentSize(this._dom.pane);
+                var dim = this._horizontal ? "width" : "height";
+
+                this._lockContent(size);
+                this._dom.content.style.transform = "translate(" + -(shownPaneSize[dim] - hiddenPaneSize[dim]) + "px, 0px)";
+                this._dom.paneWrapper.style.zIndex = "1";
+
+                resizeTransition(this._dom.paneWrapper, this._dom.pane, {
+                    from: hiddenPaneSize[dim],
+                    to: shownPaneSize[dim],
+                    dimension: dim,
+                    inverted: this.placement === Placement.right || this.placement === Placement.bottom
+                }).then(() => {
+                    this._dom.content.style.transform = "";
+                    this._dom.paneWrapper.style.zIndex = "";
+                    this._unlockContent();
+                    Animations.fadeIn(this._dom.content);
+                });
+            }
         } else {
             if (this.shownDisplayMode === ShownDisplayMode.overlay) {
                 showEdgeUI(this._dom.paneWrapper, this._getAnimationOffsets());
             } else {
                 // TODO: rtl
                 if (this.placement === Placement.top || this.placement === Placement.left) {
-                    this._lockContent(size);
-                    showEdgeUI([this._dom.paneWrapper, this._dom.content], this._getAnimationOffsets()).then(() => {
-                        this._unlockContent();
-                    });
+                    if (this._pushAnimation) {
+                        // Slide pane and push content
+                        this._lockContent(size);
+                        showEdgeUI([this._dom.paneWrapper, this._dom.content], this._getAnimationOffsets()).then(() => {
+                            this._unlockContent();
+                        });
+                    } else {
+                        // Slide pane and fade in content
+                        this._lockContent(size);
+                        var offsets = this._getAnimationOffsets();
+                        this._dom.content.style.transform = "translate(" + offsets.left + ", " + offsets.top + ")";
+                        this._dom.paneWrapper.style.zIndex = "1";
+                        showEdgeUI(this._dom.paneWrapper, this._getAnimationOffsets()).then(() => {
+                            this._dom.paneWrapper.style.zIndex = "";
+                            this._unlockContent();
+                            this._dom.content.style.transform = "";
+                            Animations.fadeIn(this._dom.content);
+                        });
+                    }
                 } else {
                     this._useAbsolutePane();
                     showEdgeUI(this._dom.paneWrapper, this._getAnimationOffsets()).then(() => {
@@ -472,21 +511,42 @@ export class SplitView {
         var p = Promise.wrap(null);
         
         if (peek) {
-            var shownPaneSize = measureContentSize(this._dom.pane);
-            var dim = this._horizontal ? "width" : "height";
-            p = resizeTransition(this._dom.paneWrapper, this._dom.pane, {
-                from: shownPaneSize[dim],
-                to: hiddenPaneSize[dim],
-                dimension: dim,
-                inverted: this.placement === Placement.right || this.placement === Placement.bottom
-            });
+            if (this.shownDisplayMode === ShownDisplayMode.overlay) {
+                var shownPaneSize = measureContentSize(this._dom.pane);
+                var dim = this._horizontal ? "width" : "height";
+                p = resizeTransition(this._dom.paneWrapper, this._dom.pane, {
+                    from: shownPaneSize[dim],
+                    to: hiddenPaneSize[dim],
+                    dimension: dim,
+                    inverted: this.placement === Placement.right || this.placement === Placement.bottom
+                });
+            } else {
+                var shownPaneSize = measureContentSize(this._dom.pane);
+                var dim = this._horizontal ? "width" : "height";
+                p = resizeTransition(this._dom.paneWrapper, this._dom.pane, {
+                    from: shownPaneSize[dim],
+                    to: hiddenPaneSize[dim],
+                    dimension: dim,
+                    inverted: this.placement === Placement.right || this.placement === Placement.bottom
+                }).then(() => {
+                    Animations.fadeIn(this._dom.content);
+                });
+            }
         } else {
             if (this.shownDisplayMode === ShownDisplayMode.overlay) {
                 p = hideEdgeUI(this._dom.paneWrapper, this._getAnimationOffsets());
             } else {
                 if (this._horizontal) {
-                    var elements = this.placement === Placement.left ? [this._dom.paneWrapper, this._dom.content] : [this._dom.paneWrapper];
-                    p = hideEdgeUI(elements, this._getAnimationOffsets());
+                    if (this._pushAnimation) {
+                        // Slide pane and push content
+                        var elements = this.placement === Placement.left ? [this._dom.paneWrapper, this._dom.content] : [this._dom.paneWrapper];
+                        p = hideEdgeUI(elements, this._getAnimationOffsets());
+                    } else {
+                        // Slide pane and fade in content
+                        p = hideEdgeUI(this._dom.paneWrapper, this._getAnimationOffsets()).then(() => {
+                            Animations.fadeIn(this._dom.content);
+                        });
+                    }
                 } else {
                     var elements = this.placement === Placement.top ? [this._dom.paneWrapper, this._dom.content] : [this._dom.paneWrapper];
                     this._lockContent(this._measureHiddenContent());
