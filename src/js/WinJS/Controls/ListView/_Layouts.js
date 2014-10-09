@@ -325,7 +325,7 @@ define([
                         _ElementUtilities.removeClass(this._site.surface, _Constants._headerPositionTopClass);
                         _ElementUtilities.removeClass(this._site.surface, _Constants._headerPositionLeftClass);
                         _ElementUtilities.removeClass(this._site.surface, _Constants._structuralNodesClass);
-                        _ElementUtilities.removeClass(this._site.surface, _Constants._avoidNestingFlexBoxesClass);
+                        _ElementUtilities.removeClass(this._site.surface, _Constants._singleItemsBlockClass);
                         this._site.surface.style.cssText = "";
                         if (this._groups) {
                             cleanGroups(this._groups);
@@ -610,7 +610,7 @@ define([
                         _ElementUtilities[(that._usingStructuralNodes) ? "addClass" : "removeClass"]
                             (that._site.surface, _Constants._structuralNodesClass);
                         _ElementUtilities[(that._envInfo.nestedFlexTooLarge || that._envInfo.nestedFlexTooSmall) ? "addClass" : "removeClass"]
-                            (that._site.surface, _Constants._avoidNestingFlexBoxesClass);
+                            (that._site.surface, _Constants._singleItemsBlockClass);
 
                         if (that._sizes.viewportContentSize !== that._getViewportCrossSize()) {
                             that._viewportSizeChanged(that._getViewportCrossSize());
@@ -4211,7 +4211,7 @@ define([
                         _ElementUtilities[(that._usingStructuralNodes) ? "addClass" : "removeClass"]
                             (that._site.surface, _Constants._structuralNodesClass);
                         _ElementUtilities[(that._envInfo.nestedFlexTooLarge || that._envInfo.nestedFlexTooSmall) ? "addClass" : "removeClass"]
-                            (that._site.surface, _Constants._avoidNestingFlexBoxesClass);
+                            (that._site.surface, _Constants._singleItemsBlockClass);
 
 
                         if (that._sizes.viewportContentSize !== that._getViewportCrossSize()) {
