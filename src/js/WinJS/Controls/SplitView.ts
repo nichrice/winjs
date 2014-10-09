@@ -200,12 +200,12 @@ function paneSlideIn(elements: any, offsets: any): Promise<any> {
 }
 
 function paneSlideOut(elements: any, offsets: any): Promise<any> {
-    return Animations.paneSlideOut(elements, offsets).then(function () {
+    return Animations.paneSlideOut(elements, offsets);/*.then(function () {
         elements = makeArray(elements);
         elements.forEach((e: HTMLElement) => {
             e.style.transform = "";
         });
-    });
+    });*/
 }
 
 /// <field>
@@ -440,11 +440,22 @@ export class SplitView {
                         var offsets = this._getAnimationOffsets();
                         this._dom.content.style.transform = "translate(" + offsets.left + ", " + offsets.top + ")";
                         this._dom.paneWrapper.style.zIndex = "1";
-                        paneSlideIn(this._dom.paneWrapper, this._getAnimationOffsets()).then(() => {
+                        
+                        var delay = parseInt((<HTMLInputElement>_Global.document.getElementById("slideInToFadeDelay")).value, 10) * _TransitionAnimation._animationFactor;
+                        
+                        var p1 = new Promise((c) => {
+                            _Global.setTimeout(() => {
+                                this._unlockContent();
+                                this._dom.content.style.transform = "";
+                                Animations.fadeIn(this._dom.content).then(() => {
+                                    c();
+                                });
+                            }, delay);
+                        });
+                        
+                        var p2 = paneSlideIn(this._dom.paneWrapper, this._getAnimationOffsets());
+                        Promise.join([p1, p2]).then(() => {
                             this._dom.paneWrapper.style.zIndex = "";
-                            this._unlockContent();
-                            this._dom.content.style.transform = "";
-                            Animations.fadeIn(this._dom.content);
                         });
                     }
                 } else {
@@ -542,9 +553,36 @@ export class SplitView {
                         var elements = this.placement === Placement.left ? [this._dom.paneWrapper, this._dom.content] : [this._dom.paneWrapper];
                         p = paneSlideOut(elements, this._getAnimationOffsets());
                     } else {
+                        var shownContentSize = measureContentSize(this._dom.content);
+                        var shownPaneSize = measureContentSize(this._dom.pane);
+                        var paneDiff = shownPaneSize.width - hiddenPaneSize.width;
+                        var hiddenContentSize = {
+                            width: shownContentSize.width + paneDiff,
+                            height: shownContentSize.height
+                        };
+                        
+                        var delay = parseInt((<HTMLInputElement>_Global.document.getElementById("slideOutToFadeDelay")).value, 10) * _TransitionAnimation._animationFactor;
+                        
+                        this._dom.paneWrapper.style.zIndex = "1";
+                        var p1 = new Promise((c) => {
+                            _Global.setTimeout(() => {
+                                this._lockContent(hiddenContentSize);
+                                this._dom.content.style.transform = "translate(" + -paneDiff + "px, 0px)";
+                                Animations.fadeIn(this._dom.content).then(() => {
+                                    c();
+                                });
+                            }, delay);
+                        });
+                        
                         // Slide pane and fade in content
-                        p = paneSlideOut(this._dom.paneWrapper, this._getAnimationOffsets()).then(() => {
+                        var p2 = paneSlideOut(this._dom.paneWrapper, this._getAnimationOffsets());/*.then(() => {
                             Animations.fadeIn(this._dom.content);
+                        });*/
+                        p = Promise.join([p1, p2]).then(() => {
+                            this._unlockContent();
+                            this._dom.content.style.transform = "";
+                            this._dom.paneWrapper.style.zIndex = "";
+                            this._dom.paneWrapper.style.transform = "";
                         });
                     }
                 } else {
