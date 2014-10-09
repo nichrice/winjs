@@ -15,7 +15,7 @@ define([
     '../ItemContainer/_ItemEventsHandler',
     './_Helpers',
     './_ItemsContainer'
-    ], function virtualizeContentsViewInit(exports, _Global, _Base, _BaseUtils, Promise, _Signal, Scheduler, _Dispose, _ElementUtilities, _SafeHtml, _UI, _Constants, _ItemEventsHandler, _Helpers, _ItemsContainer) {
+], function virtualizeContentsViewInit(exports, _Global, _Base, _BaseUtils, Promise, _Signal, Scheduler, _Dispose, _ElementUtilities, _SafeHtml, _UI, _Constants, _ItemEventsHandler, _Helpers, _ItemsContainer) {
     "use strict";
 
     function setFlow(from, to) {
@@ -111,8 +111,10 @@ define([
             }
 
             var _VirtualizeContentsView = _Base.Class.define(function VirtualizeContentsView_ctor(listView) {
+
                 this._listView = listView;
                 this._forceRelayout = false;
+                this._configureVirtualization();
                 this.items = new _ItemsContainer._ItemsContainer(listView);
                 this.firstIndexDisplayed = -1;
                 this.lastIndexDisplayed = -1;
@@ -1174,8 +1176,8 @@ define([
                     }
 
                     this.deferTimeout = this._lazilyRemoveRedundantItemsBlocks().then(function () {
-                            return Promise.timeout(_Constants._DEFERRED_ACTION);
-                        }).
+                        return Promise.timeout(_Constants._DEFERRED_ACTION);
+                    }).
                         then(function () {
                             return waitForSeZo(that._listView);
                         }).
@@ -1635,6 +1637,16 @@ define([
                     this._listView._writeProfilerMark(perfId + "StopTM");
                 },
 
+                _configureVirtualization: function VirtualizeContentsView_configureVirtualization() {
+                    if (_BaseUtils._isiOS) {
+                        this.maxLeadingPages = _VirtualizeContentsView._iOSPagesToPrefetch;
+                        this.maxTrailingPages = _VirtualizeContentsView._iOSPagesToRetain;
+                    } else {
+                        this.maxLeadingPages = _VirtualizeContentsView._pagesToPrefetch;
+                        this.maxTrailingPages = _VirtualizeContentsView._pagesToPrefetch;
+                    }
+                },
+
                 _realizePageImpl: function VirtualizeContentsView_realizePageImpl() {
                     var that = this;
 
@@ -1691,31 +1703,33 @@ define([
                         var count = that.containers.length;
 
                         if (count) {
-                            // While the zoom animation is played we want to minimize the # of pages
-                            // being fetched to improve TtFF for SeZo scenarios
-                            var pagesToPrefetch = _VirtualizeContentsView._pagesToPrefetch;
-                            var customPagesToPrefetchMax = _VirtualizeContentsView._customPagesToPrefetchMax;
-                            var customPagesToPrefetchMin = _VirtualizeContentsView._customPagesToPrefetchMin;
-                            if (that._listView._zooming) {
-                                pagesToPrefetch = 0;
-                                customPagesToPrefetchMax = 0;
-                                customPagesToPrefetchMin = 0;
-                            }
-
+                            //// While the zoom animation is played we want to minimize the # of pages
+                            //// being fetched to improve TtFF for SeZo scenarios
+                            //var pagesToPrefetch = _VirtualizeContentsView._pagesToPrefetch;
+                            //var customPagesToPrefetchMax = _VirtualizeContentsView._customPagesToPrefetchMax;
+                            //var customPagesToPrefetchMin = _VirtualizeContentsView._customPagesToPrefetchMin;
+                            //if (that._listView._zooming) {
+                            //    pagesToPrefetch = 0;
+                            //    customPagesToPrefetchMax = 0;
+                            //    customPagesToPrefetchMin = 0;
+                            //}
+                            var pagesToPrefetch = that.maxLeadingPages;
+                            var pagesToRetain = that.maxTrailingPages;
                             var viewportLength = that._listView._getViewportLength();
                             var pagesBefore, pagesAfter;
 
-                            if (_BaseUtils._isiOS && !_VirtualizeContentsView._disableCustomPagesPrefetch) {
-                                pagesBefore = (that._direction === "left" ? customPagesToPrefetchMax : customPagesToPrefetchMin);
+                            if (that._listView._zooming) {
+                                pagesBefore = pagesAfter = 0;
+                            } else if(_VirtualizeContentsView._disableCustomPagesPrefetch) {
+                                pagesBefore = pagesAfter = _VirtualizeContentsView._pagesToPrefetch;
+                            } else {
+                                pagesBefore = (that._direction === "left" ? pagesToPrefetch : pagesToRetain);
 
                                 // Optimize the beginning of the list such that if you scroll, then change direction and start going back towards the beginning of the list,
                                 // we maintain a remainder of pages that can be added to pagesAfter. This ensures that at beginning of the list, which is the common case,
-                                // we always have customPagesToPrefetchMax ahead, even when the scrolling direction is constantly changing.
+                                // we always have pagesToPrefetch ahead, even when the scrolling direction is constantly changing.
                                 var pagesShortBehind = Math.max(0, (pagesBefore - (that._scrollbarPos / viewportLength)));
-                                pagesAfter = Math.min(customPagesToPrefetchMax, pagesShortBehind + (that._direction === "right" ? customPagesToPrefetchMax : customPagesToPrefetchMin));
-                            } else {
-                                pagesBefore = pagesToPrefetch;
-                                pagesAfter = pagesToPrefetch;
+                                pagesAfter = Math.min(pagesToPrefetch, pagesShortBehind + (that._direction === "right" ? pagesToPrefetch : pagesToRetain));
                             }
 
                             var beginningOffset = Math.max(0, that._scrollbarPos - pagesBefore * viewportLength),
@@ -2701,10 +2715,10 @@ define([
                         that._direction = scroll.direction || "right";
                     });
                 }
-            },{
+            }, {
                 _pagesToPrefetch: 2,
-                _customPagesToPrefetchMax: 6,
-                _customPagesToPrefetchMin: 2,
+                _iOSPagesToPrefetch: 6,
+                _iOSPagesToRetain: _VirtualizeContentsView._pagesToPrefetch,
                 _disableCustomPagesPrefetch: false,
                 _waitForSeZoIntervalDuration: 100,
                 _waitForSeZoTimeoutDuration: 500,
@@ -2712,7 +2726,7 @@ define([
                 _startupChunkSize: 100,
                 _maxTimePerCreateContainers: 5,
                 _createContainersJobTimeslice: 15,
-                _blocksToRelease:10,
+                _blocksToRelease: 10,
                 _realizationLevel: {
                     skip: "skip",
                     realize: "realize",
@@ -2729,6 +2743,7 @@ define([
 
             var CreatedState = _Base.Class.define(function CreatedState_ctor(view) {
                 this.view = view;
+                this.view._customPagesToPrefetch =
                 this.view._createTreeBuildingSignal();
                 this.view._createLayoutSignal();
             }, {

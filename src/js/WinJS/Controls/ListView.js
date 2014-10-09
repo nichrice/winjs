@@ -351,6 +351,26 @@ define([
                     }
                 },
 
+                /// TODO
+                maxLeadingPages: {
+                    get: function ListView_getMaxLeadingPages() {
+                        return this._view.maxLeadingPages;
+                    },
+                    set: function ListView_setMaxLeadingPages(value) {
+                        this._view.maxLeadingPages = Math.min(0, parseInt(value));
+                    },
+                },
+
+                /// TODO
+                maxTrailingPages: {
+                    get: function ListView_getMaxTrailingPages() {
+                        return this._view.maxTrailingPages;
+                    },
+                    set: function ListView_setMaxTrailingPages(value) {
+                        this._view.maxTrailingPages = Math.min(0, parseInt(value));
+                    },
+                },
+
                 /// <field type="Number" integer="true" locid="WinJS.UI.ListView.pagesToLoad" helpKeyword="WinJS.UI.ListView.pagesToLoad" isAdvanced="true">
                 /// Gets or sets the number of pages to load when the user scrolls beyond the
                 /// threshold specified by the pagesToLoadThreshold property if
