@@ -4929,8 +4929,8 @@ module WinJSTests {
             });
 
             var elementsPerPage, expectedRealizedCount;
-            var iosMaxPages = WinJS.UI._VirtualizeContentsView._iOSPagesToPrefetch;
-            var iosMinPages = WinJS.UI._VirtualizeContentsView._iOSPagesToRetain;
+            var iosMaxPages = WinJS.UI._VirtualizeContentsView._iOSMaxLeadingPages;
+            var iosMinPages = WinJS.UI._VirtualizeContentsView._iOSMaxTrailingPages;
 
             Helper.ListView.waitForReady(listView, -1)().then(function () {
                 elementsPerPage = (listView.indexOfLastVisible - listView.indexOfFirstVisible) + 1

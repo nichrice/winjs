@@ -1643,8 +1643,8 @@ define([
 
                 _configureVirtualization: function VirtualizeContentsView_configureVirtualization() {
                     if (_BaseUtils._isiOS) {
-                        this.maxLeadingPages = _VirtualizeContentsView._iOSPagesToPrefetch;
-                        this.maxTrailingPages = _VirtualizeContentsView._iOSPagesToRetain;
+                        this.maxLeadingPages = _VirtualizeContentsView._iOSMaxLeadingPages;
+                        this.maxTrailingPages = _VirtualizeContentsView._iOSMaxTrailingPages;
                     } else {
                         this.maxLeadingPages = _VirtualizeContentsView._defaultPagesToPrefetch;
                         this.maxTrailingPages = _VirtualizeContentsView._defaultPagesToPrefetch;

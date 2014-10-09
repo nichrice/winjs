@@ -251,8 +251,8 @@ declare module WinJS {
             var _defaultPagesToPrefetch;
             var _createContainersJobTimeslice;
             var _startupChunkSize;
-            var _iOSPagesToPrefetch;
-            var _iOSPagesToRetain;
+            var _iOSMaxLeadingPages;
+            var _iOSMaxTrailingPages;
         }
 
         class PrivateAutoSuggestBox extends WinJS.UI.AutoSuggestBox {
