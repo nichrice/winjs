@@ -1703,16 +1703,8 @@ define([
                         var count = that.containers.length;
 
                         if (count) {
-                            //// While the zoom animation is played we want to minimize the # of pages
-                            //// being fetched to improve TtFF for SeZo scenarios
-                            //var pagesToPrefetch = _VirtualizeContentsView._pagesToPrefetch;
-                            //var customPagesToPrefetchMax = _VirtualizeContentsView._customPagesToPrefetchMax;
-                            //var customPagesToPrefetchMin = _VirtualizeContentsView._customPagesToPrefetchMin;
-                            //if (that._listView._zooming) {
-                            //    pagesToPrefetch = 0;
-                            //    customPagesToPrefetchMax = 0;
-                            //    customPagesToPrefetchMin = 0;
-                            //}
+                            // While the zoom animation is played we want to minimize the # of pages
+                            // being fetched to improve TtFF for SeZo scenarios
                             var pagesToPrefetch = that.maxLeadingPages;
                             var pagesToRetain = that.maxTrailingPages;
                             var viewportLength = that._listView._getViewportLength();
@@ -2718,7 +2710,7 @@ define([
             }, {
                 _pagesToPrefetch: 2,
                 _iOSPagesToPrefetch: 6,
-                _iOSPagesToRetain: _VirtualizeContentsView._pagesToPrefetch,
+                _iOSPagesToRetain: 2,
                 _disableCustomPagesPrefetch: false,
                 _waitForSeZoIntervalDuration: 100,
                 _waitForSeZoTimeoutDuration: 500,
