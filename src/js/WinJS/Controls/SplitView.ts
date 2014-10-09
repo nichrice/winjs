@@ -195,12 +195,12 @@ function makeArray(elements: any): any {
     }
 }
 
-function showEdgeUI(elements: any, offsets: any): Promise<any> {
-    return Animations.showEdgeUI(elements, offsets, { mechanism: "transition" });
+function paneSlideIn(elements: any, offsets: any): Promise<any> {    
+    return Animations.paneSlideIn(elements, offsets);
 }
 
-function hideEdgeUI(elements: any, offsets: any): Promise<any> {
-    return Animations.hideEdgeUI(elements, offsets, { mechanism: "transition" }).then(function () {
+function paneSlideOut(elements: any, offsets: any): Promise<any> {
+    return Animations.paneSlideOut(elements, offsets).then(function () {
         elements = makeArray(elements);
         elements.forEach((e: HTMLElement) => {
             e.style.transform = "";
@@ -424,14 +424,14 @@ export class SplitView {
             }
         } else {
             if (this.shownDisplayMode === ShownDisplayMode.overlay) {
-                showEdgeUI(this._dom.paneWrapper, this._getAnimationOffsets());
+                paneSlideIn(this._dom.paneWrapper, this._getAnimationOffsets());
             } else {
                 // TODO: rtl
                 if (this.placement === Placement.top || this.placement === Placement.left) {
                     if (this._pushAnimation) {
                         // Slide pane and push content
                         this._lockContent(size);
-                        showEdgeUI([this._dom.paneWrapper, this._dom.content], this._getAnimationOffsets()).then(() => {
+                        paneSlideIn([this._dom.paneWrapper, this._dom.content], this._getAnimationOffsets()).then(() => {
                             this._unlockContent();
                         });
                     } else {
@@ -440,7 +440,7 @@ export class SplitView {
                         var offsets = this._getAnimationOffsets();
                         this._dom.content.style.transform = "translate(" + offsets.left + ", " + offsets.top + ")";
                         this._dom.paneWrapper.style.zIndex = "1";
-                        showEdgeUI(this._dom.paneWrapper, this._getAnimationOffsets()).then(() => {
+                        paneSlideIn(this._dom.paneWrapper, this._getAnimationOffsets()).then(() => {
                             this._dom.paneWrapper.style.zIndex = "";
                             this._unlockContent();
                             this._dom.content.style.transform = "";
@@ -449,7 +449,7 @@ export class SplitView {
                     }
                 } else {
                     this._useAbsolutePane();
-                    showEdgeUI(this._dom.paneWrapper, this._getAnimationOffsets()).then(() => {
+                    paneSlideIn(this._dom.paneWrapper, this._getAnimationOffsets()).then(() => {
                         this._clearAbsolutePane();
                     });
                 }
@@ -534,16 +534,16 @@ export class SplitView {
             }
         } else {
             if (this.shownDisplayMode === ShownDisplayMode.overlay) {
-                p = hideEdgeUI(this._dom.paneWrapper, this._getAnimationOffsets());
+                p = paneSlideOut(this._dom.paneWrapper, this._getAnimationOffsets());
             } else {
                 if (this._horizontal) {
                     if (this._pushAnimation) {
                         // Slide pane and push content
                         var elements = this.placement === Placement.left ? [this._dom.paneWrapper, this._dom.content] : [this._dom.paneWrapper];
-                        p = hideEdgeUI(elements, this._getAnimationOffsets());
+                        p = paneSlideOut(elements, this._getAnimationOffsets());
                     } else {
                         // Slide pane and fade in content
-                        p = hideEdgeUI(this._dom.paneWrapper, this._getAnimationOffsets()).then(() => {
+                        p = paneSlideOut(this._dom.paneWrapper, this._getAnimationOffsets()).then(() => {
                             Animations.fadeIn(this._dom.content);
                         });
                     }
@@ -553,7 +553,7 @@ export class SplitView {
                     if (this.placement === Placement.bottom) {
                         this._useAbsolutePane();
                     }
-                    p = hideEdgeUI(elements, this._getAnimationOffsets()).then(() => {
+                    p = paneSlideOut(elements, this._getAnimationOffsets()).then(() => {
                         if (this.placement === Placement.bottom) {
                             this._clearAbsolutePane();
                         }
