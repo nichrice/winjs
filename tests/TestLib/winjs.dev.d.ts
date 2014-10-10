@@ -345,6 +345,8 @@ declare module WinJS {
 
             ensureVisible(itemIndex: number): void;
             ensureVisible(itemIndex: IListViewEntity): void;
+            maxTrailingPages: number;
+            maxLeadingPages: number;
         }
 
         class PrivateListLayout extends ListLayout {

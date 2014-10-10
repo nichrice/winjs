@@ -355,48 +355,18 @@ module WinJSTests {
             });
     }
 
-    function verifyCustomPagesToPrefetch(maxLeadingPages, maxTrailingPages, complete) {
-        //WinJS.Utilities._setIsiOS(true);
-
-        var viewPortHeight = 300,
-            count = 200,
-            list = new WinJS.Binding.List(initData(count));
-
-        function renderer(itemPromise) {
-            return itemPromise.then(function (item) {
-                var element = document.createElement("div");
-                element.textContent = item.data.title;
-                element.style.width = element.style.height = "100px";
-                return element;
-            });
-        }
-
-        var placeholder = createListViewElement(viewPortHeight + "px");
-        var listView = new ListView(placeholder, {
-            itemDataSource: list.dataSource,
-            itemTemplate: renderer,
-            layout: {
-                type: WinJS.UI.ListLayout
-            },
-            maxLeadingPages: maxLeadingPages,
-            maxTrailingPages: maxTrailingPages,
-        });
-
-        validateCustomPagesToPrefetch(listView, maxLeadingPages, maxTrailingPages, viewPortHeight).done(function () {
-            complete();
-        });
-    }
-
-    function validateCustomPagesToPrefetch(listView, maxLeadingPages, maxTrailingPages, viewPortHeight): Promise {
+    function validatePagesToPrefetch(listView, expectedLeadingPages, expectedTrailingPages, viewPortHeight) {
         var elementsPerPage, expectedRealizedCount;
-        var maxLeadingPages = WinJS.UI._VirtualizeContentsView._iOSMaxLeadingPages;
-        var maxTrailingPages = WinJS.UI._VirtualizeContentsView._iOSMaxTrailingPages;
 
-        Helper.ListView.waitForReady(listView, -1)().then(function () {
+        // Verify property getters return the correct value.
+        LiveUnit.Assert.areEqual(expectedLeadingPages, listView.maxLeadingPages);
+        LiveUnit.Assert.areEqual(expectedTrailingPages, listView.maxTrailingPages);
+
+        return Helper.ListView.waitForReady(listView, -1)().then(function () {
             elementsPerPage = (listView.indexOfLastVisible - listView.indexOfFirstVisible) + 1
 
-            // When we are at the top of the list (scroll:0), we should have the current viewport full of items + maxLeadingPages pages ahead
-            expectedRealizedCount = elementsPerPage + (maxLeadingPages * elementsPerPage);
+            // When we are at the top of the list (scroll:0), we should have the current viewport full of items + expectedLeadingPages pages ahead
+            expectedRealizedCount = elementsPerPage + (expectedLeadingPages * elementsPerPage);
             LiveUnit.Assert.areEqual(expectedRealizedCount, listView.element.querySelectorAll(".win-container:not(.win-backdrop)").length);
 
             // Scroll to the bottom of the current viewport
@@ -405,23 +375,21 @@ module WinJSTests {
             return Helper.ListView.waitForDeferredAction(listView)();
         }).then(function () {
 
-            // When our scroll position = viewPortHeight, we should have the current viewport full of items + up to 1 page behind + maxLeadingPages pages ahead
-            expectedRealizedCount = (maxTrailingPages > 0 ? elementsPerPage : 0)  /* up to 1 page behind*/  + elementsPerPage  /* viewport*/  + (maxLeadingPages * elementsPerPage);
-            LiveUnit.Assert.areEqual(expectedRealizedCount, listView.element.querySelectorAll(".win-container:not(.win-backdrop)").length);
+                // When our scroll position = viewPortHeight, we should have the current viewport full of items + up to 1 page behind + expectedLeadingPages pages ahead
+                expectedRealizedCount = (expectedTrailingPages > 0 ? elementsPerPage : 0)  /* up to 1 page behind*/  + elementsPerPage  /* viewport*/  + (expectedLeadingPages * elementsPerPage);
+                LiveUnit.Assert.areEqual(expectedRealizedCount, listView.element.querySelectorAll(".win-container:not(.win-backdrop)").length);
 
-            // Scroll down maxLeadingPages viewports
-            listView.scrollPosition = maxLeadingPages * viewPortHeight;
+                // Scroll down expectedLeadingPages viewports
+                listView.scrollPosition = expectedLeadingPages * viewPortHeight;
 
-            return Helper.ListView.waitForDeferredAction(listView)();
-        }).then(function () {
-            LiveUnit.Assert.areEqual(listView.indexOfFirstVisible, maxLeadingPages * elementsPerPage);
+                return Helper.ListView.waitForDeferredAction(listView)();
+            }).then(function () {
+                LiveUnit.Assert.areEqual(listView.indexOfFirstVisible, expectedLeadingPages * elementsPerPage);
 
-            // Since we are scrolling downward, we optimize the front buffer, so we should have maxTrailingPages pages behind + current viewport + maxLeadingPages ahead
-            expectedRealizedCount = (maxTrailingPages * elementsPerPage) /* behind*/  + elementsPerPage  /* viewport*/  + (maxLeadingPages * elementsPerPage);
-            LiveUnit.Assert.areEqual(expectedRealizedCount, listView.element.querySelectorAll(".win-container:not(.win-backdrop)").length);
-
-            return WinJS.Promise.timeout(0);
-        });
+                // Since we are scrolling downward, we optimize the front buffer, so we should have expectedTrailingPages pages behind + current viewport + expectedLeadingPages ahead
+                expectedRealizedCount = (expectedTrailingPages * elementsPerPage) /* behind*/  + elementsPerPage  /* viewport*/  + (expectedLeadingPages * elementsPerPage);
+                LiveUnit.Assert.areEqual(expectedRealizedCount, listView.element.querySelectorAll(".win-container:not(.win-backdrop)").length);
+            });
     }
 
     function testLazyGroupedTreeCreation(data, complete) {
@@ -4972,7 +4940,40 @@ module WinJSTests {
                 });
         };
 
-        testIOSCustomPagesToPrefetch = function (complete) {
+        testDefaultPagesToPrefetch = function (complete) {
+            // Verifies the correct default values for ListView.maxTrailingPages and ListView.maxLeadingPages are used when no values are set by the user.
+            var viewPortHeight = 300,
+                count = 200,
+                list = new WinJS.Binding.List(initData(count));
+
+            function renderer(itemPromise) {
+                return itemPromise.then(function (item) {
+                    var element = document.createElement("div");
+                    element.textContent = item.data.title;
+                    element.style.width = element.style.height = "100px";
+                    return element;
+                });
+            }
+
+            var placeholder = createListViewElement(viewPortHeight + "px");
+            var listView = new ListView(placeholder, {
+                itemDataSource: list.dataSource,
+                itemTemplate: renderer,
+                layout: {
+                    type: WinJS.UI.ListLayout
+                },
+            });
+
+            var expectedLeadingPages = WinJS.UI._VirtualizeContentsView._defaultPagesToPrefetch,
+                expectedTrailingPages = WinJS.UI._VirtualizeContentsView._defaultPagesToPrefetch;
+
+            validatePagesToPrefetch(listView, expectedLeadingPages, expectedTrailingPages, viewPortHeight).done(function () {
+                complete();
+            });
+        };
+
+        testIOSDefaultPagesToPrefetch = function (complete) {
+            // Verifies that when running in IOS the correct IOS default values for ListView.maxTrailingPages and ListView.maxLeadingPages are used.
             WinJS.Utilities._setIsiOS(true);
 
             var viewPortHeight = 300,
@@ -4995,44 +4996,89 @@ module WinJSTests {
                 layout: {
                     type: WinJS.UI.ListLayout
                 },
-                maxTrailingPages: 0,
-                maxLeadingPages: 0,
             });
 
-            var elementsPerPage, expectedRealizedCount;
-            var iosMaxPages = WinJS.UI._VirtualizeContentsView._iOSMaxLeadingPages;
-            var iosMinPages = WinJS.UI._VirtualizeContentsView._iOSMaxTrailingPages;
+            var expectedLeadingPages = WinJS.UI._VirtualizeContentsView._iOSMaxLeadingPages,
+                expectedTrailingPages = WinJS.UI._VirtualizeContentsView._iOSMaxTrailingPages;
+
+            validatePagesToPrefetch(listView, expectedLeadingPages, expectedTrailingPages, viewPortHeight).done(function () {
+                complete();
+            });
+        };
+
+        testCustomPagesToPrefetch = function (complete) {
+            var viewPortHeight = 300,
+                count = 200,
+                list = new WinJS.Binding.List(initData(count));
+
+            var expectedLeadingPages = 0,
+                expectedTrailingPages = 0;
+
+            function renderer(itemPromise) {
+                return itemPromise.then(function (item) {
+                    var element = document.createElement("div");
+                    element.textContent = item.data.title;
+                    element.style.width = element.style.height = "100px";
+                    return element;
+                });
+            }
+
+            var placeholder = createListViewElement(viewPortHeight + "px");
+            var listView = new ListView(placeholder, {
+                itemDataSource: list.dataSource,
+                itemTemplate: renderer,
+                layout: {
+                    type: WinJS.UI.ListLayout
+                },
+                maxLeadingPages: expectedLeadingPages,
+                maxTrailingPages: expectedTrailingPages,
+            });
+
+            validatePagesToPrefetch(listView, expectedLeadingPages, expectedTrailingPages, viewPortHeight).done(function () {
+                complete();
+            });
+        };
+
+        testPrefetchAllPages = function (complete) {
+            // Test that it is possible to turn off virtualization by setting ListView.maxLeadingPages and ListView.maxTrailingPages to Number.MAX_VALUE
+            var viewPortHeight = 300,
+                count = 200,
+                list = new WinJS.Binding.List(initData(count));
+
+            var expectedLeadingPages = Number.MAX_VALUE,
+                expectedTrailingPages = Number.MAX_VALUE;
+
+            function renderer(itemPromise) {
+                return itemPromise.then(function (item) {
+                    var element = document.createElement("div");
+                    element.textContent = item.data.title;
+                    element.style.width = element.style.height = "100px";
+                    return element;
+                });
+            }
+
+            var placeholder = createListViewElement(viewPortHeight + "px");
+            var listView = new ListView(placeholder, {
+                itemDataSource: list.dataSource,
+                itemTemplate: renderer,
+                layout: {
+                    type: WinJS.UI.ListLayout
+                },
+                maxLeadingPages: expectedLeadingPages,
+                maxTrailingPages: expectedTrailingPages,
+            });
 
             Helper.ListView.waitForReady(listView, -1)().then(function () {
-                elementsPerPage = (listView.indexOfLastVisible - listView.indexOfFirstVisible) + 1
+                // Verify property getters return the correct value.
+                LiveUnit.Assert.areEqual(expectedLeadingPages, listView.maxLeadingPages);
+                LiveUnit.Assert.areEqual(expectedTrailingPages, listView.maxTrailingPages);
 
-            // When we are at the top of the list (scroll:0), we should have the current viewport full of items + iosMaxPages pages ahead
-            expectedRealizedCount = elementsPerPage + (iosMaxPages * elementsPerPage);
-                LiveUnit.Assert.areEqual(expectedRealizedCount, placeholder.querySelectorAll(".win-container:not(.win-backdrop)").length);
-
-                // Scroll to the bottom of the current viewport
-                listView.scrollPosition = viewPortHeight;
-
-                return Helper.ListView.waitForDeferredAction(listView)();
-            }).then(function () {
-
-                    // When our scroll position = viewPortHeight, we should have the current viewport full of items + up to 1 page behind + iosMaxPages pages ahead
-                    expectedRealizedCount = (iosMinPages > 0 ? elementsPerPage : 0)  /* up to 1 page behind*/  + elementsPerPage  /* viewport*/  + (iosMaxPages * elementsPerPage);
-                    LiveUnit.Assert.areEqual(expectedRealizedCount, placeholder.querySelectorAll(".win-container:not(.win-backdrop)").length);
-
-                    // Scroll down iosMaxPages viewports
-                    listView.scrollPosition = iosMaxPages * viewPortHeight;
-
-                    return Helper.ListView.waitForDeferredAction(listView)();
-                }).then(function () {
-                    LiveUnit.Assert.areEqual(listView.indexOfFirstVisible, iosMaxPages * elementsPerPage);
-
-                    // Since we are scrolling downward, we optimize the front buffer, so we should have iosMinPages pages behind + current viewport + iosMaxPages ahead
-                    expectedRealizedCount = (iosMinPages * elementsPerPage) /* behind*/  + elementsPerPage  /* viewport*/  + (iosMaxPages * elementsPerPage);
-                    LiveUnit.Assert.areEqual(expectedRealizedCount, placeholder.querySelectorAll(".win-container:not(.win-backdrop)").length);
-
-                    complete();
-                });
+                // With no virtualization we expect all items to be realized.
+                var expectedRealizedCount = count;
+                LiveUnit.Assert.areEqual(expectedRealizedCount, listView.element.querySelectorAll(".win-container:not(.win-backdrop)").length, "With no virtualization, we expect all items to be realized.");
+            }).done(function () { 
+                complete();
+            });
         };
 
         // Some browsers do not have good FlexBox behavior so we have to disable

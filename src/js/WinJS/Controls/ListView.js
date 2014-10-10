@@ -355,23 +355,27 @@ define([
                     }
                 },
 
-                /// TODO
+                /// <field type="Number" integer="true" locid="WinJS.UI.ListView.maxLeadingPages" helpKeyword="WinJS.UI.ListView.maxLeadingPages" isAdvanced="true">
+                /// Gets or sets the maximum number of pages to prefetch in the leading buffer for virtualization.
+                /// </field>
                 maxLeadingPages: {
                     get: function ListView_getMaxLeadingPages() {
                         return this._view.maxLeadingPages;
                     },
                     set: function ListView_setMaxLeadingPages(value) {
-                        this._view.maxLeadingPages = Math.max(0, parseInt(value));
+                        this._view.maxLeadingPages = Math.max(0, Math.floor(value));
                     },
                 },
 
-                /// TODO
+                /// <field type="Number" integer="true" locid="WinJS.UI.ListView.maxLeadingPages" helpKeyword="WinJS.UI.ListView.maxLeadingPages" isAdvanced="true">
+                /// Gets or sets the maximum number of pages to prefetch in the trailing buffer for virtualization.
+                /// </field>
                 maxTrailingPages: {
                     get: function ListView_getMaxTrailingPages() {
                         return this._view.maxTrailingPages;
                     },
                     set: function ListView_setMaxTrailingPages(value) {
-                        this._view.maxTrailingPages = Math.max(0, parseInt(value));
+                        this._view.maxTrailingPages = Math.max(0, Math.floor(value));
                     },
                 },
 
