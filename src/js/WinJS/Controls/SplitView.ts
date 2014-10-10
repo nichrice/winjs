@@ -237,27 +237,47 @@ interface ISplitViewState {
     enter(args: any): void;
     exit(): void;
     // SplitView's API surface
+    hidden: boolean; // readyonly. Writes go thru showPane/hidePane.
     showPane(): void;
     hidePane(): void;
     // Misc
-    updateUI(): void;
+    updateDom(): void;
     // Provided by _setState for use within the state
     splitView: SplitView;
 }
 
 module States {
-    function updateUIImpl(): void {
-        this.splitView._updateUIImpl();
+    function updateDomImpl(): void {
+        this.splitView._updateDomImpl();
     }
 
-    class Init implements ISplitViewState {
+    export class Init implements ISplitViewState {
+        private _hidden: boolean;
+        
         splitView: SplitView;
         name = "Init";
-        enter() { }
+        enter(options?: any) {
+            options = options || {};
+            
+            this.splitView.hidden = true;
+            this.splitView.shownDisplayMode = ShownDisplayMode.overlay;
+            this.splitView.placement = Placement.left;
+            _Control.setOptions(this, options);
+            
+            this.splitView._updateDomImpl(); // TODO: Should Hidden & Shown call updateDom instead of this guy? 
+            this.splitView._setState(this._hidden ? Hidden : Shown);
+        }
         exit = _;
-        showPane = _;
-        hidePane = _;
-        updateUI = _;
+        get hidden(): boolean {
+            return this._hidden;
+        }
+        showPane() {
+            this._hidden = false;
+        }
+        hidePane() {
+            this._hidden = true;
+        }
+        updateDom = _;
     }
 
     class Hidden implements ISplitViewState {
@@ -270,11 +290,12 @@ module States {
             }
         }
         exit = _;
+        hidden = true;
         showPane() {
             this.splitView._setState(BeforeShow);
         }
         hidePane = _;
-        updateUI = updateUIImpl;
+        updateDom = updateDomImpl;
     }
 
     class BeforeShow implements ISplitViewState {
@@ -294,15 +315,15 @@ module States {
             });
         }
         exit = cancelInterruptibles;
+        hidden = true;
         showPane = _;
         hidePane = _;
-        updateUI = updateUIImpl;
+        updateDom = updateDomImpl;
     }
 
     class Showing implements ISplitViewState {
         private _hideIsPending: boolean;
         private _playShowAnimation(): Promise<any> { return Promise.wrap(2); }
-
 
         splitView: SplitView;
         name = "Showing";
@@ -319,9 +340,16 @@ module States {
             });
         }
         exit = cancelInterruptibles;
-        showPane = _;
-        hidePane = _;
-        updateUI = _;
+        get hidden() {
+            return this._hideIsPending;
+        }
+        showPane() {
+            this._hideIsPending = false;
+        }
+        hidePane() {
+            this._hideIsPending = true;
+        }
+        updateDom = _;
     }
 
     class Shown implements ISplitViewState {
@@ -333,11 +361,12 @@ module States {
             }
         }
         exit = _;
+        hidden = false;
         showPane = _;
         hidePane() {
             this.splitView._setState(BeforeHide);
         }
-        updateUI = updateUIImpl;
+        updateDom = updateDomImpl;
     }
 
     class BeforeHide implements ISplitViewState {
@@ -357,9 +386,10 @@ module States {
             });
         }
         exit = cancelInterruptibles;
+        hidden = false;
         showPane = _;
         hidePane = _;
-        updateUI = updateUIImpl;
+        updateDom = updateDomImpl;
     }
 
     class Hiding implements ISplitViewState {
@@ -381,24 +411,28 @@ module States {
             });
         }
         exit = cancelInterruptibles;
+        get hidden() {
+            return !this._showIsPending;
+        }
         showPane() {
             this._showIsPending = true;
         }
         hidePane() {
             this._showIsPending = false;
         }
-        updateUI = _;
+        updateDom = _;
     }
 
     class Disposed implements ISplitViewState {
         splitView: SplitView;
         name = "Disposed";
+        hidden = false;
         enter() {
         }
         exit = _;
         showPane = _;
         hidePane = _;
-        updateUI = _;
+        updateDom = _;
     }
 }
 
@@ -474,13 +508,7 @@ export class SplitView {
         this._disposed = false;
 
         this._initializeDom(element || _Global.document.createElement("div"));
-        
-        this._hidden = true;
-        this.shownDisplayMode = ShownDisplayMode.overlay;
-        this.placement = Placement.left;
-
-        _Control.setOptions(this, options);
-        //this._updateUI();
+        this._setState(States.Init, options);
     }
 
     /// <field type="HTMLElement" domElement="true" readonly="true" hidden="true" locid="WinJS.UI.SplitView.element" helpKeyword="WinJS.UI.SplitView.element">
@@ -524,7 +552,7 @@ export class SplitView {
         if (this._shownDisplayMode !== value) {
             if (ShownDisplayMode[value]) {
                 this._shownDisplayMode = value;
-                this._state.updateUI();
+                this._state.updateDom();
             }
         }
     }
@@ -540,25 +568,20 @@ export class SplitView {
         if (this._placement !== value) {
             if (Placement[value]) {
                 this._placement = value;
-                this._state.updateUI();
+                this._state.updateDom();
             }
         }
     }
-
-    private _hidden: boolean;
-    // TODO: get/set hidden
+    
+    // TODO: doc comment
     get hidden(): boolean {
-        return this._hidden;
+        return this._state.hidden;
     }
     set hidden(value: boolean) {
-        value = !!value;
-        if (this._hidden !== value) {
-            this._hidden = value;
-            if (this._hidden) {
-                this.hidePane();
-            } else {
-                this.showPane();
-            }
+        if (value) {
+            this.hidePane();
+        } else {
+            this.showPane();
         }
     }
 
@@ -587,7 +610,7 @@ export class SplitView {
         var hiddenContentPosition = measurePosition(this._dom.content);
         
         this._showPane();
-        this._updateUIImpl();
+        this._updateDomImpl();
         
         var shownPaneSize = measureContentSize(this._dom.paneWrapper);
         var shownPanePosition = measurePosition(this._dom.paneWrapper);
@@ -638,52 +661,6 @@ export class SplitView {
         _ElementUtilities.removeClass(this._dom.root, ClassNames._paneHiddenMode);
         _ElementUtilities.addClass(this._dom.root, ClassNames._paneShownMode);
         this._hidden = false;
-    }
-    
-    private _setContentRect(contentSize: { width: number; height: number }, contentPosition: { left: number; top: number }) {
-        this._dom.content.style.left = contentPosition.left + "px";
-        this._dom.content.style.top = contentPosition.top + "px";
-        this._dom.content.style.height = contentSize.height + "px";
-        this._dom.content.style.width = contentSize.width + "px";
-    }
-    
-    private _prepareAnimation(paneSize: { width: number; height: number }, panePosition: { left: number; top: number }, contentSize: { width: number; height: number }, contentPosition: { left: number; top: number }): void {
-        this._dom.paneWrapper.style.position = "absolute";
-        this._dom.paneWrapper.style.zIndex = "1";
-        this._dom.paneWrapper.style.left = panePosition.left + "px";
-        this._dom.paneWrapper.style.top = panePosition.top + "px";
-        this._dom.paneWrapper.style.height = paneSize.height + "px";
-        this._dom.paneWrapper.style.width = paneSize.width + "px";
-        
-        this._dom.content.style.position = "absolute";
-        this._dom.content.style.zIndex = "0";
-        this._setContentRect(contentSize, contentPosition);
-    }
-    
-    private _clearAnimation(): void {
-        // TODO: cssText?
-        // TODO: cache style object? 
-        
-        this._dom.paneWrapper.style.position = "";
-        this._dom.paneWrapper.style.zIndex = "";
-        this._dom.paneWrapper.style.left = "";
-        this._dom.paneWrapper.style.top = "";
-        this._dom.paneWrapper.style.height = "";
-        this._dom.paneWrapper.style.width = "";
-        
-        this._dom.content.style.position = "";
-        this._dom.content.style.zIndex = "";
-        this._dom.content.style.left = "";
-        this._dom.content.style.top = "";
-        this._dom.content.style.height = "";
-        this._dom.content.style.width = "";
-        
-        this._dom.pane.style.height = "";
-        this._dom.pane.style.width = "";
-        this._dom.pane.style.transform = "";
-        
-        this._dom.paneWrapper.style.transform = "";
-        this._dom.content.style.transform = "";
     }
 
     hidePane(): void {
@@ -754,7 +731,7 @@ export class SplitView {
         playHideAnimation().done(() => {
             this._clearAnimation();
             this._hidePane();
-            this._updateUIImpl();
+            this._updateDomImpl();
         });
     }
 
@@ -876,13 +853,61 @@ export class SplitView {
             cancelable: true
         });
     }
-
-    private _paneIsFirst: boolean;
-    private _renderedShownDisplayMode: string;
-    private _renderedPlacement: string;
-    private _updateUIImpl(): void {
+    
+    _setContentRect(contentSize: { width: number; height: number }, contentPosition: { left: number; top: number }) {
+        this._dom.content.style.left = contentPosition.left + "px";
+        this._dom.content.style.top = contentPosition.top + "px";
+        this._dom.content.style.height = contentSize.height + "px";
+        this._dom.content.style.width = contentSize.width + "px";
+    }
+    
+    _prepareAnimation(paneSize: { width: number; height: number }, panePosition: { left: number; top: number }, contentSize: { width: number; height: number }, contentPosition: { left: number; top: number }): void {
+        this._dom.paneWrapper.style.position = "absolute";
+        this._dom.paneWrapper.style.zIndex = "1";
+        this._dom.paneWrapper.style.left = panePosition.left + "px";
+        this._dom.paneWrapper.style.top = panePosition.top + "px";
+        this._dom.paneWrapper.style.height = paneSize.height + "px";
+        this._dom.paneWrapper.style.width = paneSize.width + "px";
+        
+        this._dom.content.style.position = "absolute";
+        this._dom.content.style.zIndex = "0";
+        this._setContentRect(contentSize, contentPosition);
+    }
+    
+    _clearAnimation(): void {
+        // TODO: cssText?
+        // TODO: cache style object? 
+        
+        this._dom.paneWrapper.style.position = "";
+        this._dom.paneWrapper.style.zIndex = "";
+        this._dom.paneWrapper.style.left = "";
+        this._dom.paneWrapper.style.top = "";
+        this._dom.paneWrapper.style.height = "";
+        this._dom.paneWrapper.style.width = "";
+        this._dom.paneWrapper.style.transform = "";
+        
+        this._dom.content.style.position = "";
+        this._dom.content.style.zIndex = "";
+        this._dom.content.style.left = "";
+        this._dom.content.style.top = "";
+        this._dom.content.style.height = "";
+        this._dom.content.style.width = "";
+        this._dom.content.style.transform = "";
+        
+        this._dom.pane.style.height = "";
+        this._dom.pane.style.width = "";
+        this._dom.pane.style.transform = "";
+    }
+    
+    private _rendered: {
+        paneIsFirst: boolean;
+        shownDisplayMode: string;
+        placement: string; 
+        hidden: boolean;
+    };
+    _updateDomImpl(): void {
         var paneShouldBeFirst = this.placement === Placement.left || this.placement === Placement.top;
-        if (paneShouldBeFirst !== this._paneIsFirst) {
+        if (paneShouldBeFirst !== this._rendered.paneIsFirst) {
             // TODO: restore focus?
             if (paneShouldBeFirst) {
                 this._dom.root.appendChild(this._dom.panePlaceholder);
@@ -894,18 +919,28 @@ export class SplitView {
                 this._dom.root.appendChild(this._dom.panePlaceholder);
             }
         }
-        this._paneIsFirst = paneShouldBeFirst;
+        this._rendered.paneIsFirst = paneShouldBeFirst;
 
-        if (this._renderedPlacement !== this.placement) {
-            removeClass(this._dom.root, placementClassMap[this._renderedPlacement]);
+        if (this._rendered.placement !== this.placement) {
+            removeClass(this._dom.root, placementClassMap[this._rendered.placement]);
             addClass(this._dom.root, placementClassMap[this.placement]);
-            this._renderedPlacement = this.placement;
+            this._rendered.placement = this.placement;
         }
 
-        if (this._renderedShownDisplayMode !== this.shownDisplayMode) {
-            removeClass(this._dom.root, shownDisplayModeClassMap[this._renderedShownDisplayMode]);
+        if (this._rendered.shownDisplayMode !== this.shownDisplayMode) {
+            removeClass(this._dom.root, shownDisplayModeClassMap[this._rendered.shownDisplayMode]);
             addClass(this._dom.root, shownDisplayModeClassMap[this.shownDisplayMode]);
-            this._renderedShownDisplayMode = this.shownDisplayMode;
+            this._rendered.shownDisplayMode = this.shownDisplayMode;
+        }
+        
+        if (this._rendered.hidden !== this.hidden) {
+            if (this.hidden) {
+                _ElementUtilities.removeClass(this._dom.root, ClassNames._paneShownMode);
+                _ElementUtilities.addClass(this._dom.root, ClassNames._paneHiddenMode);
+            } else {
+                _ElementUtilities.removeClass(this._dom.root, ClassNames._paneHiddenMode);
+                _ElementUtilities.addClass(this._dom.root, ClassNames._paneShownMode);
+            }
         }
 
         var width: string, height: string;
