@@ -96,17 +96,25 @@ function measureContentSize(element: HTMLElement) {
     return {
         width: _ElementUtilities.getContentWidth(element),
         height: _ElementUtilities.getContentHeight(element)
-    }
+    };
 }
 
 function measureTotalSize(element: HTMLElement) {
     return {
         width: _ElementUtilities.getTotalWidth(element),
         height: _ElementUtilities.getTotalHeight(element)
-    }
+    };
+}
+
+function measurePosition(element: HTMLElement) {
+    return {
+        left: element.offsetLeft,
+        top: element.offsetTop
+    };
 }
 
 function executeTransform(element: HTMLElement, transformTo: string): Promise<any> {
+    // TODO: What's the appropriate resize animation duration and curve?
     var duration = 367 * _TransitionAnimation._animationFactor;
     element.style.transition = duration + "ms transform cubic-bezier(0.1, 0.9, 0.2, 1)";
     element.style.transform = transformTo;
@@ -147,12 +155,7 @@ function growTransition(clipper: HTMLElement, grower: HTMLElement, options: { fr
     return Promise.join([
         executeTransform(clipper,  ""),
         executeTransform(grower, "")
-    ]).then(function () {
-        clipper.style[size] = "";
-        clipper.style.transform = "";
-        grower.style[size] = "";
-        grower.style.transform = "";
-    });
+    ]);
 }
 
 function shrinkTransition(clipper: HTMLElement, grower: HTMLElement, options: { from: number; to: number; dimension: string; inverted: boolean; }): Promise<any> {
@@ -171,10 +174,7 @@ function shrinkTransition(clipper: HTMLElement, grower: HTMLElement, options: { 
     return Promise.join([
         executeTransform(clipper, translate + "(" + diff + "px)"),
         executeTransform(grower, translate  + "(" + -diff + "px)")
-    ]).then(function () {
-        clipper.style.transform = "";
-        grower.style.transform = "";
-    });
+    ]);
 }
 
 function resizeTransition(clipper: HTMLElement, grower: HTMLElement, options: { from: number; to: number; dimension: string; inverted: boolean; }): Promise<any> {
@@ -185,27 +185,12 @@ function resizeTransition(clipper: HTMLElement, grower: HTMLElement, options: { 
     }
 }
 
-function makeArray(elements: any): any {
-    if (Array.isArray(elements) || elements instanceof (<any>_Global).NodeList || elements instanceof (<any>_Global).HTMLCollection) {
-        return elements;
-    } else if (elements) {
-        return [elements];
-    } else {
-        return [];
-    }
-}
-
 function paneSlideIn(elements: any, offsets: any): Promise<any> {    
     return Animations.paneSlideIn(elements, offsets);
 }
 
 function paneSlideOut(elements: any, offsets: any): Promise<any> {
-    return Animations.paneSlideOut(elements, offsets);/*.then(function () {
-        elements = makeArray(elements);
-        elements.forEach((e: HTMLElement) => {
-            e.style.transform = "";
-        });
-    });*/
+    return Animations.paneSlideOut(elements, offsets);
 }
 
 /// <field>
@@ -384,88 +369,58 @@ export class SplitView {
         /// Shows the SplitView's pane.
         /// </summary>
         /// </signature>
-        if (this.shownDisplayMode === ShownDisplayMode.inline) {
-            var size = measureContentSize(this._dom.content);
-        }
-        var hiddenPaneSize = measureContentSize(this._dom.pane);
-        var peek = this._horizontal ? hiddenPaneSize.width > 0 : hiddenPaneSize.height > 0;
+        // TODO: make sure we're using the correct layout boxes (e.g. content box, border box)
+        var hiddenPaneSize = measureContentSize(this._dom.paneWrapper);
+        var hiddenPanePosition = measurePosition(this._dom.paneWrapper);
+        var hiddenContentSize = measureContentSize(this._dom.content);
+        var hiddenContentPosition = measurePosition(this._dom.content);
         
         this._showPane();
         this._updateUI();
-        if (peek) {
-            if (this.shownDisplayMode === ShownDisplayMode.overlay) {
-                var shownPaneSize = measureContentSize(this._dom.pane);
-                var dim = this._horizontal ? "width" : "height";
-                resizeTransition(this._dom.paneWrapper, this._dom.pane, {
+        
+        var shownPaneSize = measureContentSize(this._dom.paneWrapper);
+        var shownPanePosition = measurePosition(this._dom.paneWrapper);
+        var shownContentSize = measureContentSize(this._dom.content);
+        var shownContentPosition = measurePosition(this._dom.content);
+        this._prepareAnimation(shownPaneSize, shownPanePosition, hiddenContentSize, hiddenContentPosition);
+        
+        var playPaneAnimation = (): Promise<any> => {
+            var dim = this._horizontal ? "width" : "height";
+            var peek = hiddenPaneSize[dim] > 0;
+            
+            if (peek) {
+                return resizeTransition(this._dom.paneWrapper, this._dom.pane, {
                     from: hiddenPaneSize[dim],
                     to: shownPaneSize[dim],
                     dimension: dim,
                     inverted: this.placement === Placement.right || this.placement === Placement.bottom
                 });
             } else {
-                var shownPaneSize = measureContentSize(this._dom.pane);
-                var dim = this._horizontal ? "width" : "height";
-
-                this._lockContent(size);
-                this._dom.content.style.transform = "translate(" + -(shownPaneSize[dim] - hiddenPaneSize[dim]) + "px, 0px)";
-                this._dom.paneWrapper.style.zIndex = "1";
-
-                resizeTransition(this._dom.paneWrapper, this._dom.pane, {
-                    from: hiddenPaneSize[dim],
-                    to: shownPaneSize[dim],
-                    dimension: dim,
-                    inverted: this.placement === Placement.right || this.placement === Placement.bottom
-                }).then(() => {
-                    this._dom.content.style.transform = "";
-                    this._dom.paneWrapper.style.zIndex = "";
-                    this._unlockContent();
-                    Animations.fadeIn(this._dom.content);
-                });
+                return paneSlideIn(this._dom.paneWrapper, this._getAnimationOffsets());
             }
-        } else {
+        };
+        
+        var playShowAnimation = (): Promise<any> => {
             if (this.shownDisplayMode === ShownDisplayMode.overlay) {
-                paneSlideIn(this._dom.paneWrapper, this._getAnimationOffsets());
+                return playPaneAnimation();
             } else {
                 // TODO: rtl
-                if (this.placement === Placement.top || this.placement === Placement.left) {
-                    if (this._pushAnimation) {
-                        // Slide pane and push content
-                        this._lockContent(size);
-                        paneSlideIn([this._dom.paneWrapper, this._dom.content], this._getAnimationOffsets()).then(() => {
-                            this._unlockContent();
-                        });
-                    } else {
-                        // Slide pane and fade in content
-                        this._lockContent(size);
-                        var offsets = this._getAnimationOffsets();
-                        this._dom.content.style.transform = "translate(" + offsets.left + ", " + offsets.top + ")";
-                        this._dom.paneWrapper.style.zIndex = "1";
-                        
-                        var delay = parseInt((<HTMLInputElement>_Global.document.getElementById("slideInToFadeDelay")).value, 10) * _TransitionAnimation._animationFactor;
-                        
-                        var p1 = new Promise((c) => {
-                            _Global.setTimeout(() => {
-                                this._unlockContent();
-                                this._dom.content.style.transform = "";
-                                Animations.fadeIn(this._dom.content).then(() => {
-                                    c();
-                                });
-                            }, delay);
-                        });
-                        
-                        var p2 = paneSlideIn(this._dom.paneWrapper, this._getAnimationOffsets());
-                        Promise.join([p1, p2]).then(() => {
-                            this._dom.paneWrapper.style.zIndex = "";
-                        });
-                    }
-                } else {
-                    this._useAbsolutePane();
-                    paneSlideIn(this._dom.paneWrapper, this._getAnimationOffsets()).then(() => {
-                        this._clearAbsolutePane();
-                    });
-                }
+                // Slide pane and fade in content
+                var delay = 350 * _TransitionAnimation._animationFactor;//parseInt((<HTMLInputElement>_Global.document.getElementById("slideInToFadeDelay")).value, 10) * _TransitionAnimation._animationFactor;
+                
+                var p1 = Promise.timeout(delay).then(() => {
+                    this._setContentRect(shownContentSize, shownContentPosition);
+                    return Animations.fadeIn(this._dom.content);
+                });
+                
+                var p2 = playPaneAnimation();
+                return Promise.join([p1, p2]);
             }
-        }
+        };
+        
+        playShowAnimation().done(() => {
+            this._clearAnimation();
+        });
     }
 
     private _showPane(): void {
@@ -474,41 +429,50 @@ export class SplitView {
         this._hidden = false;
     }
     
-    private _lockContent(lockedSize: { width: number; height: number; }): void {
-        this._dom.content.style.width = lockedSize.width + "px";
-        this._dom.content.style.height = lockedSize.height + "px";
-        // TODO: cross browser flex
-        this._dom.content.style.flexGrow = "0";
-        this._dom.content.style.flexShrink = "0";
+    private _setContentRect(contentSize: { width: number; height: number }, contentPosition: { left: number; top: number }) {
+        this._dom.content.style.left = contentPosition.left + "px";
+        this._dom.content.style.top = contentPosition.top + "px";
+        this._dom.content.style.height = contentSize.height + "px";
+        this._dom.content.style.width = contentSize.width + "px";
     }
     
-    private _unlockContent(): void {
-        this._dom.content.style.width = "";
-        this._dom.content.style.height = "";
-        // TODO: cross browser flex
-        this._dom.content.style.flexGrow = "";
-        this._dom.content.style.flexShrink = "";
-    }
-    
-    private _useAbsolutePane(): void {
+    private _prepareAnimation(paneSize: { width: number; height: number }, panePosition: { left: number; top: number }, contentSize: { width: number; height: number }, contentPosition: { left: number; top: number }): void {
         this._dom.paneWrapper.style.position = "absolute";
-        this._dom.paneWrapper.style.left = this.placement === Placement.right ? "" : "0px";
-        this._dom.paneWrapper.style.right = this.placement === Placement.right ? "0px" : "";
-        this._dom.paneWrapper.style.top = this.placement === Placement.bottom ? "" : "0px";
-        this._dom.paneWrapper.style.bottom = this.placement === Placement.bottom ? "0px" : "";
-        this._dom.paneWrapper.style.height = this._horizontal ? "100%" : "";
-        this._dom.paneWrapper.style.width = this._horizontal ? "" : "100%";
+        this._dom.paneWrapper.style.zIndex = "1";
+        this._dom.paneWrapper.style.left = panePosition.left + "px";
+        this._dom.paneWrapper.style.top = panePosition.top + "px";
+        this._dom.paneWrapper.style.height = paneSize.height + "px";
+        this._dom.paneWrapper.style.width = paneSize.width + "px";
         
+        this._dom.content.style.position = "absolute";
+        this._dom.content.style.zIndex = "0";
+        this._setContentRect(contentSize, contentPosition);
     }
     
-    private _clearAbsolutePane(): void {
+    private _clearAnimation(): void {
+        // TODO: cssText?
+        // TODO: cache style object? 
+        
         this._dom.paneWrapper.style.position = "";
+        this._dom.paneWrapper.style.zIndex = "";
         this._dom.paneWrapper.style.left = "";
-        this._dom.paneWrapper.style.right = "";
         this._dom.paneWrapper.style.top = "";
-        this._dom.paneWrapper.style.bottom = "";
         this._dom.paneWrapper.style.height = "";
         this._dom.paneWrapper.style.width = "";
+        
+        this._dom.content.style.position = "";
+        this._dom.content.style.zIndex = "";
+        this._dom.content.style.left = "";
+        this._dom.content.style.top = "";
+        this._dom.content.style.height = "";
+        this._dom.content.style.width = "";
+        
+        this._dom.pane.style.height = "";
+        this._dom.pane.style.width = "";
+        this._dom.pane.style.transform = "";
+        
+        this._dom.paneWrapper.style.transform = "";
+        this._dom.content.style.transform = "";
     }
 
     hidePane(): void {
@@ -517,90 +481,67 @@ export class SplitView {
         /// Hides the SplitView's pane.
         /// </summary>
         /// </signature>
-        var hiddenPaneSize = this._measureHiddenPane(); 
-        var peek = this._horizontal ? hiddenPaneSize.width > 0 : hiddenPaneSize.height > 0;
-        var p = Promise.wrap(null);
+        var shownPaneSize = measureContentSize(this._dom.paneWrapper);
+        var shownPanePosition = measurePosition(this._dom.paneWrapper);
+        var shownContentSize = measureContentSize(this._dom.content);
+        var shownContentPosition = measurePosition(this._dom.content);
+        this._prepareAnimation(shownPaneSize, shownPanePosition, shownContentSize, shownContentPosition);
         
-        if (peek) {
-            if (this.shownDisplayMode === ShownDisplayMode.overlay) {
-                var shownPaneSize = measureContentSize(this._dom.pane);
-                var dim = this._horizontal ? "width" : "height";
-                p = resizeTransition(this._dom.paneWrapper, this._dom.pane, {
+        var hiddenPaneSize = this._measureHiddenPane();
+        var sizeProp = this._horizontal ? "width" : "height";
+        var paneDiff = shownPaneSize[sizeProp] - hiddenPaneSize[sizeProp];
+        var sign = this.placement === Placement.left || this.placement === Placement.top ? -1 : 0;
+        var hiddenContentPosition = this._horizontal ? {
+            left: shownContentPosition.left + sign * paneDiff,
+            top: shownContentPosition.top  
+        } : {
+            left: shownContentPosition.left,
+            top: shownContentPosition.top + sign * paneDiff
+        };
+        var hiddenContentSize = this._horizontal ? {
+            width: shownContentSize.width + paneDiff,
+            height: shownContentSize.height
+        } : {
+            width: shownContentSize.width,
+            height: shownContentSize.height + paneDiff
+        };
+        
+        var playPaneAnimation = (): Promise<any> => {
+            var dim = this._horizontal ? "width" : "height";
+            var peek = hiddenPaneSize[dim] > 0;
+            
+            if (peek) {
+                return resizeTransition(this._dom.paneWrapper, this._dom.pane, {
                     from: shownPaneSize[dim],
                     to: hiddenPaneSize[dim],
                     dimension: dim,
                     inverted: this.placement === Placement.right || this.placement === Placement.bottom
                 });
             } else {
-                var shownPaneSize = measureContentSize(this._dom.pane);
-                var dim = this._horizontal ? "width" : "height";
-                p = resizeTransition(this._dom.paneWrapper, this._dom.pane, {
-                    from: shownPaneSize[dim],
-                    to: hiddenPaneSize[dim],
-                    dimension: dim,
-                    inverted: this.placement === Placement.right || this.placement === Placement.bottom
-                }).then(() => {
-                    Animations.fadeIn(this._dom.content);
-                });
+                return paneSlideOut(this._dom.paneWrapper, this._getAnimationOffsets())
             }
-        } else {
+        };
+        
+        var playHideAnimation = (): Promise<any> => {
             if (this.shownDisplayMode === ShownDisplayMode.overlay) {
-                p = paneSlideOut(this._dom.paneWrapper, this._getAnimationOffsets());
-            } else {
-                if (this._horizontal) {
-                    if (this._pushAnimation) {
-                        // Slide pane and push content
-                        var elements = this.placement === Placement.left ? [this._dom.paneWrapper, this._dom.content] : [this._dom.paneWrapper];
-                        p = paneSlideOut(elements, this._getAnimationOffsets());
-                    } else {
-                        var shownContentSize = measureContentSize(this._dom.content);
-                        var shownPaneSize = measureContentSize(this._dom.pane);
-                        var paneDiff = shownPaneSize.width - hiddenPaneSize.width;
-                        var hiddenContentSize = {
-                            width: shownContentSize.width + paneDiff,
-                            height: shownContentSize.height
-                        };
-                        
-                        var delay = parseInt((<HTMLInputElement>_Global.document.getElementById("slideOutToFadeDelay")).value, 10) * _TransitionAnimation._animationFactor;
-                        
-                        this._dom.paneWrapper.style.zIndex = "1";
-                        var p1 = new Promise((c) => {
-                            _Global.setTimeout(() => {
-                                this._lockContent(hiddenContentSize);
-                                this._dom.content.style.transform = "translate(" + -paneDiff + "px, 0px)";
-                                Animations.fadeIn(this._dom.content).then(() => {
-                                    c();
-                                });
-                            }, delay);
-                        });
-                        
-                        // Slide pane and fade in content
-                        var p2 = paneSlideOut(this._dom.paneWrapper, this._getAnimationOffsets());/*.then(() => {
-                            Animations.fadeIn(this._dom.content);
-                        });*/
-                        p = Promise.join([p1, p2]).then(() => {
-                            this._unlockContent();
-                            this._dom.content.style.transform = "";
-                            this._dom.paneWrapper.style.zIndex = "";
-                            this._dom.paneWrapper.style.transform = "";
-                        });
-                    }
-                } else {
-                    var elements = this.placement === Placement.top ? [this._dom.paneWrapper, this._dom.content] : [this._dom.paneWrapper];
-                    this._lockContent(this._measureHiddenContent());
-                    if (this.placement === Placement.bottom) {
-                        this._useAbsolutePane();
-                    }
-                    p = paneSlideOut(elements, this._getAnimationOffsets()).then(() => {
-                        if (this.placement === Placement.bottom) {
-                            this._clearAbsolutePane();
-                        }
-                        this._unlockContent();
-                    });
-                }
+                return playPaneAnimation();
+            } else {                
+                var delay = 267 * _TransitionAnimation._animationFactor;//parseInt((<HTMLInputElement>_Global.document.getElementById("slideOutToFadeDelay")).value, 10) * _TransitionAnimation._animationFactor;
+                
+                var p1 = Promise.timeout(delay).then(() => {
+                    this._setContentRect(hiddenContentSize, hiddenContentPosition);
+                    return Animations.fadeIn(this._dom.content);
+                });
+                
+                // Slide pane and fade in content
+                var p2 = playPaneAnimation();
+                return Promise.join([p1, p2]);
             }
-        }
-        p.done(() => { 
+        };
+
+        
+        playHideAnimation().done(() => {
+            this._clearAnimation();
             this._hidePane();
             this._updateUI();
         });
