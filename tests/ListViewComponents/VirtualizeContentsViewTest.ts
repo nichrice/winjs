@@ -4925,7 +4925,9 @@ module WinJSTests {
                 itemTemplate: renderer,
                 layout: {
                     type: WinJS.UI.ListLayout
-                }
+                },
+                maxTrailingPages: 0,
+                maxLeadingPages: 0,
             });
 
             var elementsPerPage, expectedRealizedCount;
