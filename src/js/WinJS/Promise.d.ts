@@ -160,6 +160,8 @@ declare class Promise<T> {
      * @returns A promise that is in an error state with the specified value.
     **/
     static wrapError<U>(error: U): Promise<U>;
+    
+    static _cancelBlocker(input: any, oncancel?: Function): Promise<any>;
 
     //#endregion Methods
 }
