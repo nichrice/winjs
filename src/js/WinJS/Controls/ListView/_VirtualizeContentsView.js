@@ -1716,7 +1716,7 @@ define([
 
                             if (that._listView._zooming) {
                                 pagesBefore = pagesAfter = 0;
-                            } else if(_VirtualizeContentsView._disableCustomPagesPrefetch) {
+                            } else if (_VirtualizeContentsView._disableCustomPagesPrefetch) {
                                 pagesBefore = pagesAfter = _VirtualizeContentsView._defaultPagesToPrefetch;
                             } else {
                                 pagesBefore = (that._direction === "left" ? pagesToPrefetch : pagesToRetain);
