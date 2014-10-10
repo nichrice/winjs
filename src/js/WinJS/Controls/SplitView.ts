@@ -9,6 +9,7 @@ import _Control = require('../Utilities/_Control');
 import _Hoverable = require('../Utilities/_Hoverable');
 import _ElementUtilities = require('../Utilities/_ElementUtilities');
 import Promise = require('../Promise');
+import _Signal = require('../_Signal');
 import Animations = require('../Animations');
 import _TransitionAnimation = require('../Animations/_TransitionAnimation');
 
@@ -47,6 +48,7 @@ var EventNames = {
     beforeHide: "beforehide",
     afterHide: "afterhide"
 };
+
 // TODO: switch to enum? con: lose string debuggability. pro: gain type checking for properties.
 var ShownDisplayMode = {
     /// <field locid="WinJS.UI.SplitView.ShownDisplayMode.overlay" helpKeyword="WinJS.UI.SplitView.ShownDisplayMode.overlay">
@@ -76,6 +78,22 @@ var Placement = {
     /// </field>
     bottom: "bottom"
 };
+var shownDisplayModeClassMap = {};
+placementClassMap[ShownDisplayMode.overlay] = ClassNames._paneOverlayMode;
+placementClassMap[ShownDisplayMode.inline] = ClassNames._paneInlineMode;
+var placementClassMap = {};
+placementClassMap[Placement.left] = ClassNames._placementLeft;
+placementClassMap[Placement.right] = ClassNames._placementRight;
+placementClassMap[Placement.top] = ClassNames._placementTop;
+placementClassMap[Placement.bottom] = ClassNames._placementBottom;
+
+// Versions of add/removeClass that are no ops when called with falsy class names.
+function addClass(element: HTMLElement, className: string) {
+    className && _ElementUtilities.addClass(element, className);
+}
+function removeClass(element: HTMLElement, className: string) {
+    className && _ElementUtilities.removeClass(element, className);
+}
 
 function inDom(element: HTMLElement) {
     return new Promise(function (c) {
@@ -193,6 +211,197 @@ function paneSlideOut(elements: any, offsets: any): Promise<any> {
     return Animations.paneSlideOut(elements, offsets);
 }
 
+//
+// State machine
+//
+
+function _() { }
+
+function interruptible<T>(object: T, workFn: (promise: Promise<any>, object: T) => Promise<any>) {
+    object["_interruptibleWorkPromises"] = object["_interruptibleWorkPromises"] || [];
+    var workStoredSignal = new _Signal();
+    object["_interruptibleWorkPromises"].push(workFn(workStoredSignal.promise, object));
+    workStoredSignal.complete();
+}
+
+function cancelInterruptibles() {
+    (this["_interruptibleWorkPromises"] || []).forEach((workPromise: _Signal<any>) => {
+        workPromise.cancel();
+    });
+}
+
+interface ISplitViewState {
+    // Debugging
+    name: string;
+    // State lifecyle
+    enter(args: any): void;
+    exit(): void;
+    // SplitView's API surface
+    showPane(): void;
+    hidePane(): void;
+    // Misc
+    updateUI(): void;
+    // Provided by _setState for use within the state
+    splitView: SplitView;
+}
+
+module States {
+    function updateUIImpl(): void {
+        this.splitView._updateUIImpl();
+    }
+
+    class Init implements ISplitViewState {
+        splitView: SplitView;
+        name = "Init";
+        enter() { }
+        exit = _;
+        showPane = _;
+        hidePane = _;
+        updateUI = _;
+    }
+
+    class Hidden implements ISplitViewState {
+        splitView: SplitView;
+        name = "Hidden";
+        enter(args?: { showIsPending?: boolean; }) {
+            args = args || {};
+            if (args.showIsPending) {
+                this.showPane();
+            }
+        }
+        exit = _;
+        showPane() {
+            this.splitView._setState(BeforeShow);
+        }
+        hidePane = _;
+        updateUI = updateUIImpl;
+    }
+
+    class BeforeShow implements ISplitViewState {
+        splitView: SplitView;
+        name = "BeforeShow";
+        enter() {
+            interruptible(this, (ready) => {
+                return ready.then(() => {
+                    return this.splitView._fireBeforeShow(); // Give opportunity for chain to be canceled when calling into app code
+                }).then((shouldShow) => {
+                    if (shouldShow) {
+                        this.splitView._setState(Showing);
+                    } else {
+                        this.splitView._setState(Hidden);
+                    }
+                });
+            });
+        }
+        exit = cancelInterruptibles;
+        showPane = _;
+        hidePane = _;
+        updateUI = updateUIImpl;
+    }
+
+    class Showing implements ISplitViewState {
+        private _hideIsPending: boolean;
+        private _playShowAnimation(): Promise<any> { return Promise.wrap(2); }
+
+
+        splitView: SplitView;
+        name = "Showing";
+        enter() {
+            interruptible(this, (ready) => {
+                return ready.then(() => {
+                    this._hideIsPending = false;
+                    return this._playShowAnimation();
+                }).then(() => {
+                    this.splitView._fireEvent(EventNames.afterShow); // Give opportunity for chain to be canceled when calling into app code
+                }).then(() => {
+                    this.splitView._setState(Shown, { hideIsPending: this._hideIsPending });
+                });
+            });
+        }
+        exit = cancelInterruptibles;
+        showPane = _;
+        hidePane = _;
+        updateUI = _;
+    }
+
+    class Shown implements ISplitViewState {
+        splitView: SplitView;
+        name = "Shown";
+        enter(args: { hideIsPending: boolean }) {
+            if (args.hideIsPending) {
+                this.hidePane();
+            }
+        }
+        exit = _;
+        showPane = _;
+        hidePane() {
+            this.splitView._setState(BeforeHide);
+        }
+        updateUI = updateUIImpl;
+    }
+
+    class BeforeHide implements ISplitViewState {
+        splitView: SplitView;
+        name = "BeforeHide";
+        enter() {
+            interruptible(this, (ready) => {
+                return ready.then(() => {
+                    return this.splitView._fireBeforeHide(); // Give opportunity for chain to be canceled when calling into app code
+                }).then((shouldHide) => {
+                    if (shouldHide) {
+                        this.splitView._setState(Hiding);
+                    } else {
+                        this.splitView._setState(Shown, { hideIsPending: false });
+                    }
+                });
+            });
+        }
+        exit = cancelInterruptibles;
+        showPane = _;
+        hidePane = _;
+        updateUI = updateUIImpl;
+    }
+
+    class Hiding implements ISplitViewState {
+        private _showIsPending: boolean;
+        private _playExitAnimation(): Promise<any> { return Promise.wrap(2); }
+
+        splitView: SplitView;
+        name = "Hiding";
+        enter() {
+            interruptible(this, (ready) => {
+                return ready.then(() => {
+                    this._showIsPending = false;
+                    return this._playExitAnimation();
+                }).then(() => {
+                    this.splitView._fireEvent(EventNames.afterHide); // Give opportunity for chain to be canceled when calling into app code
+                }).then(() => {
+                    this.splitView._setState(Hidden, { showIsPending: this._showIsPending });
+                });
+            });
+        }
+        exit = cancelInterruptibles;
+        showPane() {
+            this._showIsPending = true;
+        }
+        hidePane() {
+            this._showIsPending = false;
+        }
+        updateUI = _;
+    }
+
+    class Disposed implements ISplitViewState {
+        splitView: SplitView;
+        name = "Disposed";
+        enter() {
+        }
+        exit = _;
+        showPane = _;
+        hidePane = _;
+        updateUI = _;
+    }
+}
+
 /// <field>
 /// <summary locid="WinJS.UI.SplitView">
 /// Displays a modal dialog which can display arbitrary HTML content.
@@ -215,6 +424,18 @@ function paneSlideOut(elements: any, offsets: any): Promise<any> {
 /// <resource type="javascript" src="//$(TARGET_DESTINATION)/js/ui.js" shared="true" />
 /// <resource type="css" src="//$(TARGET_DESTINATION)/css/ui-dark.css" shared="true" />
 export class SplitView {
+    /// <field locid="WinJS.UI.SplitView.ShownDisplayMode" helpKeyword="WinJS.UI.SplitView.ShownDisplayMode">
+    /// Display options for a SplitView's pane.
+    /// </field>
+    static ShownDisplayMode = ShownDisplayMode;
+
+    /// <field locid="WinJS.UI.SplitView.Placement" helpKeyword="WinJS.UI.SplitView.Placement">
+    /// Placement options for a SplitView's pane.
+    /// </field>
+    static Placement = Placement;
+
+    static supportedForProcessing: boolean = true;
+
     private _disposed: boolean;
     private _dom: {
         root: HTMLElement;
@@ -223,8 +444,8 @@ export class SplitView {
         panePlaceholder: HTMLElement;
         content: HTMLElement; 
     };
+    private _state: ISplitViewState;
     private _rtl: boolean;
-    private _pushAnimation: boolean;
 
     constructor(element?: HTMLElement, options: any = {}) {
         /// <signature helpKeyword="WinJS.UI.SplitView.SplitView">
@@ -301,14 +522,9 @@ export class SplitView {
     }
     set shownDisplayMode(value: string) {
         if (this._shownDisplayMode !== value) {
-            if (Object.keys(ShownDisplayMode).indexOf(value) !== -1) {
-                if (Object.keys(ShownDisplayMode).indexOf(this._shownDisplayMode) !== -1) {
-                    _ElementUtilities.removeClass(this._dom.root, "win-splitview-pane" + this._shownDisplayMode + "mode");
-                }
-                _ElementUtilities.addClass(this._dom.root, "win-splitview-pane" + value + "mode");
-
+            if (ShownDisplayMode[value]) {
                 this._shownDisplayMode = value;
-                this._updateUI();
+                this._state.updateUI();
             }
         }
     }
@@ -322,14 +538,9 @@ export class SplitView {
     }
     set placement(value: string) {
         if (this._placement !== value) {
-            if (Object.keys(Placement).indexOf(value) !== -1) {
-                if (Object.keys(Placement).indexOf(this._placement) !== -1) {
-                    _ElementUtilities.removeClass(this._dom.root, "win-splitview-placement" + this._placement);
-                }
-                _ElementUtilities.addClass(this._dom.root, "win-splitview-placement" + value);
-
+            if (Placement[value]) {
                 this._placement = value;
-                this._updateUI();
+                this._state.updateUI();
             }
         }
     }
@@ -376,7 +587,7 @@ export class SplitView {
         var hiddenContentPosition = measurePosition(this._dom.content);
         
         this._showPane();
-        this._updateUI();
+        this._updateUIImpl();
         
         var shownPaneSize = measureContentSize(this._dom.paneWrapper);
         var shownPanePosition = measurePosition(this._dom.paneWrapper);
@@ -543,7 +754,7 @@ export class SplitView {
         playHideAnimation().done(() => {
             this._clearAnimation();
             this._hidePane();
-            this._updateUI();
+            this._updateUIImpl();
         });
     }
 
@@ -586,42 +797,6 @@ export class SplitView {
         };
     }
 
-    private _paneIsFirst: boolean;
-    private _updateUI(): void {
-        var paneShouldBeFirst = this.placement === Placement.left || this.placement === Placement.top;
-        if (paneShouldBeFirst !== this._paneIsFirst) {
-            // TODO: restore focus?
-            if (paneShouldBeFirst) {
-                this._dom.root.appendChild(this._dom.panePlaceholder);
-                this._dom.root.appendChild(this._dom.paneWrapper);
-                this._dom.root.appendChild(this._dom.content);
-            } else {
-                this._dom.root.appendChild(this._dom.content);
-                this._dom.root.appendChild(this._dom.paneWrapper);
-                this._dom.root.appendChild(this._dom.panePlaceholder);
-            }
-        }
-        this._paneIsFirst = paneShouldBeFirst;
-
-        var width: string, height: string;
-        if (this.shownDisplayMode === ShownDisplayMode.overlay && !this.hidden) {
-            var hiddenPaneSize = this._measureHiddenPane();
-            if (this._horizontal) {
-                width = hiddenPaneSize.width + "px";
-                height = "";
-            } else {
-                width = "";
-                height = hiddenPaneSize.height + "px";
-            }
-        } else {
-            width = "";
-            height = "";
-        }
-        var style = this._dom.panePlaceholder.style;
-        style.width = width;
-        style.height = height;
-    }
-
     private get _horizontal(): boolean {
         return this.placement === Placement.left || this.placement === Placement.right;
     }
@@ -662,17 +837,95 @@ export class SplitView {
         };
     }
 
-    /// <field locid="WinJS.UI.SplitView.ShownDisplayMode" helpKeyword="WinJS.UI.SplitView.ShownDisplayMode">
-    /// Display options for a SplitView's pane.
-    /// </field>
-    static ShownDisplayMode = ShownDisplayMode;
+    //
+    // Methods called by states
+    //
 
-    /// <field locid="WinJS.UI.SplitView.Placement" helpKeyword="WinJS.UI.SplitView.Placement">
-    /// Placement options for a SplitView's pane.
-    /// </field>
-    static Placement = Placement;
+    // TODO: How to say a class (not an object) whose instances implement an interface?
+    // TODO: public because needs to be accessed by states
+    _setState(NewState: any, arg0?: any) {
+        if (!this._disposed) {
+            this._state && this._state.exit();
+            this._state = new NewState();
+            this._state.splitView = this;
+            this._state.enter(arg0);
+        }
+    }
 
-    static supportedForProcessing: boolean = true;
+    // Calls into arbitrary app code
+    _fireEvent(eventName: string, options?: { detail?: any; cancelable?: boolean; }): boolean {
+        options = options || {};
+        var detail = options.detail || null;
+        var cancelable = !!options.cancelable;
+
+        var eventObject = <CustomEvent>_Global.document.createEvent("CustomEvent");
+        eventObject.initCustomEvent(eventName, true, cancelable, detail);
+        return this._dom.root.dispatchEvent(eventObject);
+    }
+
+    // Calls into arbitrary app code
+    _fireBeforeShow(): boolean {
+        return this._fireEvent(EventNames.beforeShow, {
+            cancelable: true
+        });
+    }
+
+    // Calls into arbitrary app code
+    _fireBeforeHide(): boolean {
+        return this._fireEvent(EventNames.beforeHide, {
+            cancelable: true
+        });
+    }
+
+    private _paneIsFirst: boolean;
+    private _renderedShownDisplayMode: string;
+    private _renderedPlacement: string;
+    private _updateUIImpl(): void {
+        var paneShouldBeFirst = this.placement === Placement.left || this.placement === Placement.top;
+        if (paneShouldBeFirst !== this._paneIsFirst) {
+            // TODO: restore focus?
+            if (paneShouldBeFirst) {
+                this._dom.root.appendChild(this._dom.panePlaceholder);
+                this._dom.root.appendChild(this._dom.paneWrapper);
+                this._dom.root.appendChild(this._dom.content);
+            } else {
+                this._dom.root.appendChild(this._dom.content);
+                this._dom.root.appendChild(this._dom.paneWrapper);
+                this._dom.root.appendChild(this._dom.panePlaceholder);
+            }
+        }
+        this._paneIsFirst = paneShouldBeFirst;
+
+        if (this._renderedPlacement !== this.placement) {
+            removeClass(this._dom.root, placementClassMap[this._renderedPlacement]);
+            addClass(this._dom.root, placementClassMap[this.placement]);
+            this._renderedPlacement = this.placement;
+        }
+
+        if (this._renderedShownDisplayMode !== this.shownDisplayMode) {
+            removeClass(this._dom.root, shownDisplayModeClassMap[this._renderedShownDisplayMode]);
+            addClass(this._dom.root, shownDisplayModeClassMap[this.shownDisplayMode]);
+            this._renderedShownDisplayMode = this.shownDisplayMode;
+        }
+
+        var width: string, height: string;
+        if (this.shownDisplayMode === ShownDisplayMode.overlay && !this.hidden) {
+            var hiddenPaneSize = this._measureHiddenPane();
+            if (this._horizontal) {
+                width = hiddenPaneSize.width + "px";
+                height = "";
+            } else {
+                width = "";
+                height = hiddenPaneSize.height + "px";
+            }
+        } else {
+            width = "";
+            height = "";
+        }
+        var style = this._dom.panePlaceholder.style;
+        style.width = width;
+        style.height = height;
+    }
 }
 
 _Base.Class.mix(SplitView, _Events.createEventProperties(
