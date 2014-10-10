@@ -355,6 +355,75 @@ module WinJSTests {
             });
     }
 
+    function verifyCustomPagesToPrefetch(maxLeadingPages, maxTrailingPages, complete) {
+        //WinJS.Utilities._setIsiOS(true);
+
+        var viewPortHeight = 300,
+            count = 200,
+            list = new WinJS.Binding.List(initData(count));
+
+        function renderer(itemPromise) {
+            return itemPromise.then(function (item) {
+                var element = document.createElement("div");
+                element.textContent = item.data.title;
+                element.style.width = element.style.height = "100px";
+                return element;
+            });
+        }
+
+        var placeholder = createListViewElement(viewPortHeight + "px");
+        var listView = new ListView(placeholder, {
+            itemDataSource: list.dataSource,
+            itemTemplate: renderer,
+            layout: {
+                type: WinJS.UI.ListLayout
+            },
+            maxLeadingPages: maxLeadingPages,
+            maxTrailingPages: maxTrailingPages,
+        });
+
+        validateCustomPagesToPrefetch(listView, maxLeadingPages, maxTrailingPages, viewPortHeight).done(function () {
+            complete();
+        });
+    }
+
+    function validateCustomPagesToPrefetch(listView, maxLeadingPages, maxTrailingPages, viewPortHeight): Promise {
+        var elementsPerPage, expectedRealizedCount;
+        var maxLeadingPages = WinJS.UI._VirtualizeContentsView._iOSMaxLeadingPages;
+        var maxTrailingPages = WinJS.UI._VirtualizeContentsView._iOSMaxTrailingPages;
+
+        Helper.ListView.waitForReady(listView, -1)().then(function () {
+            elementsPerPage = (listView.indexOfLastVisible - listView.indexOfFirstVisible) + 1
+
+            // When we are at the top of the list (scroll:0), we should have the current viewport full of items + maxLeadingPages pages ahead
+            expectedRealizedCount = elementsPerPage + (maxLeadingPages * elementsPerPage);
+            LiveUnit.Assert.areEqual(expectedRealizedCount, listView.element.querySelectorAll(".win-container:not(.win-backdrop)").length);
+
+            // Scroll to the bottom of the current viewport
+            listView.scrollPosition = viewPortHeight;
+
+            return Helper.ListView.waitForDeferredAction(listView)();
+        }).then(function () {
+
+            // When our scroll position = viewPortHeight, we should have the current viewport full of items + up to 1 page behind + maxLeadingPages pages ahead
+            expectedRealizedCount = (maxTrailingPages > 0 ? elementsPerPage : 0)  /* up to 1 page behind*/  + elementsPerPage  /* viewport*/  + (maxLeadingPages * elementsPerPage);
+            LiveUnit.Assert.areEqual(expectedRealizedCount, listView.element.querySelectorAll(".win-container:not(.win-backdrop)").length);
+
+            // Scroll down maxLeadingPages viewports
+            listView.scrollPosition = maxLeadingPages * viewPortHeight;
+
+            return Helper.ListView.waitForDeferredAction(listView)();
+        }).then(function () {
+            LiveUnit.Assert.areEqual(listView.indexOfFirstVisible, maxLeadingPages * elementsPerPage);
+
+            // Since we are scrolling downward, we optimize the front buffer, so we should have maxTrailingPages pages behind + current viewport + maxLeadingPages ahead
+            expectedRealizedCount = (maxTrailingPages * elementsPerPage) /* behind*/  + elementsPerPage  /* viewport*/  + (maxLeadingPages * elementsPerPage);
+            LiveUnit.Assert.areEqual(expectedRealizedCount, listView.element.querySelectorAll(".win-container:not(.win-backdrop)").length);
+
+            return WinJS.Promise.timeout(0);
+        });
+    }
+
     function testLazyGroupedTreeCreation(data, complete) {
         WinJS.UI._VirtualizeContentsView._maxTimePerCreateContainers = 0;
 
@@ -4903,7 +4972,7 @@ module WinJSTests {
                 });
         };
 
-        testCustomPagesToPrefetch = function (complete) {
+        testIOSCustomPagesToPrefetch = function (complete) {
             WinJS.Utilities._setIsiOS(true);
 
             var viewPortHeight = 300,
