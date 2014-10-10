@@ -2742,7 +2742,6 @@ define([
 
             var CreatedState = _Base.Class.define(function CreatedState_ctor(view) {
                 this.view = view;
-                this.view._customPagesToPrefetch =
                 this.view._createTreeBuildingSignal();
                 this.view._createLayoutSignal();
             }, {
