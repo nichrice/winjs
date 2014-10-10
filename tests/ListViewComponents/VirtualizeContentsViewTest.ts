@@ -375,21 +375,21 @@ module WinJSTests {
             return Helper.ListView.waitForDeferredAction(listView)();
         }).then(function () {
 
-                // When our scroll position = viewPortHeight, we should have the current viewport full of items + up to 1 page behind + expectedLeadingPages pages ahead
-                expectedRealizedCount = (expectedTrailingPages > 0 ? elementsPerPage : 0)  /* up to 1 page behind*/  + elementsPerPage  /* viewport*/  + (expectedLeadingPages * elementsPerPage);
-                LiveUnit.Assert.areEqual(expectedRealizedCount, listView.element.querySelectorAll(".win-container:not(.win-backdrop)").length);
+            // When our scroll position = viewPortHeight, we should have the current viewport full of items + up to 1 page behind + expectedLeadingPages pages ahead
+            expectedRealizedCount = (expectedTrailingPages > 0 ? elementsPerPage : 0)  /* up to 1 page behind*/  + elementsPerPage  /* viewport*/  + (expectedLeadingPages * elementsPerPage);
+            LiveUnit.Assert.areEqual(expectedRealizedCount, listView.element.querySelectorAll(".win-container:not(.win-backdrop)").length);
 
-                // Scroll down expectedLeadingPages viewports
-                listView.scrollPosition = expectedLeadingPages * viewPortHeight;
+            // Scroll down expectedLeadingPages viewports
+            listView.scrollPosition = expectedLeadingPages * viewPortHeight;
 
-                return Helper.ListView.waitForDeferredAction(listView)();
-            }).then(function () {
-                LiveUnit.Assert.areEqual(listView.indexOfFirstVisible, expectedLeadingPages * elementsPerPage);
+            return Helper.ListView.waitForDeferredAction(listView)();
+        }).then(function () {
+            LiveUnit.Assert.areEqual(listView.indexOfFirstVisible, expectedLeadingPages * elementsPerPage);
 
-                // Since we are scrolling downward, we optimize the front buffer, so we should have expectedTrailingPages pages behind + current viewport + expectedLeadingPages ahead
-                expectedRealizedCount = (expectedTrailingPages * elementsPerPage) /* behind*/  + elementsPerPage  /* viewport*/  + (expectedLeadingPages * elementsPerPage);
-                LiveUnit.Assert.areEqual(expectedRealizedCount, listView.element.querySelectorAll(".win-container:not(.win-backdrop)").length);
-            });
+            // Since we are scrolling downward, we optimize the front buffer, so we should have expectedTrailingPages pages behind + current viewport + expectedLeadingPages ahead
+            expectedRealizedCount = (expectedTrailingPages * elementsPerPage) /* behind*/  + elementsPerPage  /* viewport*/  + (expectedLeadingPages * elementsPerPage);
+            LiveUnit.Assert.areEqual(expectedRealizedCount, listView.element.querySelectorAll(".win-container:not(.win-backdrop)").length);
+        });
     }
 
     function testLazyGroupedTreeCreation(data, complete) {
