@@ -278,8 +278,14 @@ module States {
             this.splitView.placement = Placement.left;
             _Control.setOptions(this, options);
             
-            this.splitView._updateDomImpl();
-            this.splitView._setState(this._hidden ? Hidden : Shown);
+            inDom(this.splitView._dom.root).then(() => {
+                this.splitView._rtl = _Global.getComputedStyle(this.splitView._dom.root).direction === 'rtl';
+                if (this.splitView._rtl) {
+                    _ElementUtilities.addClass(this.splitView._dom.root, ClassNames._rtl);
+                }
+                this.splitView._updateDomImpl();
+                this.splitView._setState(this._hidden ? Hidden : Shown);
+            });
         }
         exit = _;
         get hidden(): boolean {
@@ -612,7 +618,7 @@ export class SplitView {
         content: HTMLElement; 
     };
     private _state: ISplitViewState;
-    private _rtl: boolean;
+    _rtl: boolean;
 
     constructor(element?: HTMLElement, options: any = {}) {
         /// <signature helpKeyword="WinJS.UI.SplitView.SplitView">
@@ -769,13 +775,7 @@ export class SplitView {
         _ElementUtilities.addClass(root, ClassNames.splitView);
         _ElementUtilities.addClass(root, "win-disposable");
         _ElementUtilities.addClass(root, ClassNames._paneHiddenMode);
-        // TODO: Have this transition us from Init state to Hidden/Shown state?
-        inDom(root).then(() => {
-            this._rtl = _Global.getComputedStyle(root).direction === 'rtl';
-            if (this._rtl) {
-                _ElementUtilities.addClass(root, ClassNames._rtl);
-            }
-        });
+        
         this._dom = {
             root: root,
             pane: paneEl,
