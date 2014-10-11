@@ -124,10 +124,13 @@ function measureTotalSize(element: HTMLElement) {
     };
 }
 
-function measurePosition(element: HTMLElement) {
+function measureAbsolutePosition(element: HTMLElement) {
+    var style = getComputedStyle(element);
+    var marginLeft = parseInt(style.marginLeft, 10);
+    var marginTop = parseInt(style.marginTop, 10);
     return {
-        left: element.offsetLeft,
-        top: element.offsetTop
+        left: element.offsetLeft - marginLeft,
+        top: element.offsetTop - marginTop
     };
 }
 
@@ -345,18 +348,17 @@ module States {
     class Showing implements ISplitViewState {
         private _hideIsPending: boolean;
         private _playShowAnimation(): Promise<any> {
-            // TODO: make sure we're using the correct layout boxes (e.g. content box, border box)
             var hiddenPaneSize = measureContentSize(this.splitView._dom.paneWrapper);
-            var hiddenPanePosition = measurePosition(this.splitView._dom.paneWrapper);
+            var hiddenPanePosition = measureAbsolutePosition(this.splitView._dom.paneWrapper);
             var hiddenContentSize = measureContentSize(this.splitView._dom.content);
-            var hiddenContentPosition = measurePosition(this.splitView._dom.content);
+            var hiddenContentPosition = measureAbsolutePosition(this.splitView._dom.content);
             
             this.splitView._renderShownMode();
             
             var shownPaneSize = measureContentSize(this.splitView._dom.paneWrapper);
-            var shownPanePosition = measurePosition(this.splitView._dom.paneWrapper);
+            var shownPanePosition = measureAbsolutePosition(this.splitView._dom.paneWrapper);
             var shownContentSize = measureContentSize(this.splitView._dom.content);
-            var shownContentPosition = measurePosition(this.splitView._dom.content);
+            var shownContentPosition = measureAbsolutePosition(this.splitView._dom.content);
             this.splitView._prepareAnimation(shownPaneSize, shownPanePosition, hiddenContentSize, hiddenContentPosition);
             
             var playPaneAnimation = (): Promise<any> => {
@@ -364,11 +366,12 @@ module States {
                 var peek = hiddenPaneSize[dim] > 0;
                 
                 if (peek) {
+                    var placementRight = this.splitView._rtl ? Placement.left : Placement.right;
                     return resizeTransition(this.splitView._dom.paneWrapper, this.splitView._dom.pane, {
                         from: hiddenPaneSize[dim],
                         to: shownPaneSize[dim],
                         dimension: dim,
-                        inverted: this.splitView.placement === Placement.right || this.splitView.placement === Placement.bottom
+                        inverted: this.splitView.placement === placementRight || this.splitView.placement === Placement.bottom
                     });
                 } else {
                     return paneSlideIn(this.splitView._dom.paneWrapper, this.splitView._getAnimationOffsets());
@@ -379,9 +382,7 @@ module States {
                 if (this.splitView.shownDisplayMode === ShownDisplayMode.overlay) {
                     return playPaneAnimation();
                 } else {
-                    // TODO: rtl
-                    // Slide pane and fade in content
-                    var fadeInDelay = 350 * _TransitionAnimation._animationFactor;//parseInt((<HTMLInputElement>_Global.document.getElementById("slideInToFadeDelay")).value, 10) * _TransitionAnimation._animationFactor;
+                    var fadeInDelay = 350 * _TransitionAnimation._animationFactor;
                     
                     var contentAnimation = Promise.timeout(fadeInDelay).then(() => {
                         this.splitView._setContentRect(shownContentSize, shownContentPosition);
@@ -471,16 +472,17 @@ module States {
         private _showIsPending: boolean;
         private _playExitAnimation(): Promise<any> {
             var shownPaneSize = measureContentSize(this.splitView._dom.paneWrapper);
-            var shownPanePosition = measurePosition(this.splitView._dom.paneWrapper);
+            var shownPanePosition = measureAbsolutePosition(this.splitView._dom.paneWrapper);
             var shownContentSize = measureContentSize(this.splitView._dom.content);
-            var shownContentPosition = measurePosition(this.splitView._dom.content);
+            var shownContentPosition = measureAbsolutePosition(this.splitView._dom.content);
             this.splitView._prepareAnimation(shownPaneSize, shownPanePosition, shownContentSize, shownContentPosition);
             
             var hiddenPaneSize = this.splitView._measureHiddenPane();
             
+            var placementRight = this.splitView._rtl ? Placement.left : Placement.right;
             var sizeProp = this.splitView._horizontal ? "width" : "height";
             var paneDiff = shownPaneSize[sizeProp] - hiddenPaneSize[sizeProp];
-            var sign = this.splitView.placement === Placement.left || this.splitView.placement === Placement.top ? -1 : 0;
+            var sign = this.splitView.placement === placementRight || this.splitView.placement === Placement.bottom ? 0 : -1;
             var hiddenContentPosition = this.splitView._horizontal ? {
                 left: shownContentPosition.left + sign * paneDiff,
                 top: shownContentPosition.top  
@@ -505,7 +507,7 @@ module States {
                         from: shownPaneSize[dim],
                         to: hiddenPaneSize[dim],
                         dimension: dim,
-                        inverted: this.splitView.placement === Placement.right || this.splitView.placement === Placement.bottom
+                        inverted: this.splitView.placement === placementRight || this.splitView.placement === Placement.bottom
                     });
                 } else {
                     return paneSlideOut(this.splitView._dom.paneWrapper, this.splitView._getAnimationOffsets())
@@ -839,9 +841,9 @@ export class SplitView {
     
     _getAnimationOffsets(): { top: string; left: string; } {
         var size = measureTotalSize(this._dom.pane);
-        // TODO: rtl
+        var placementLeft = this._rtl ? Placement.right : Placement.left;
         return this._horizontal ? {
-            left: (this.placement === Placement.left ? -1 : 1) * size.width + "px",
+            left: (this.placement === placementLeft ? -1 : 1) * size.width + "px",
             top: "0px"
         } : {
             left: "0px",
