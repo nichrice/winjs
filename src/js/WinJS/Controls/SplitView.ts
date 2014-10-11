@@ -579,7 +579,7 @@ module States {
 
 /// <field>
 /// <summary locid="WinJS.UI.SplitView">
-/// Displays a modal dialog which can display arbitrary HTML content.
+/// Displays a SplitView which renders a collapsable pane next to arbitrary HTML content.
 /// </summary>
 /// </field>
 /// <icon src="ui_winjs.ui.splitview.12x12.png" width="12" height="12" />
@@ -589,9 +589,9 @@ module States {
 
 /// <htmlSnippet supportsContent="true"><![CDATA[<div data-win-control="WinJS.UI.SplitView"></div>]]></htmlSnippet>
 /// <event name="beforeshow" locid="WinJS.UI.SplitView_e:beforeshow">Raised just before showing the pane. Call preventDefault on this event to stop the pane from being shown.</event>
-/// <event name="aftershow" locid="WinJS.UI.SplitView_e:aftershow">Raised immediately after a dialog is fully shown.</event>
+/// <event name="aftershow" locid="WinJS.UI.SplitView_e:aftershow">Raised immediately after the pane is fully shown.</event>
 /// <event name="beforehide" locid="WinJS.UI.SplitView_e:beforehide">Raised just before hiding the pane. Call preventDefault on this event to stop the pane from being hidden.</event>
-/// <event name="afterhide" locid="WinJS.UI.SplitView_e:afterhide">Raised immediately after a dialog is fully hidden.</event>
+/// <event name="afterhide" locid="WinJS.UI.SplitView_e:afterhide">Raised immediately after the pane is fully hidden.</event>
 /// <part name="splitview" class="win-splitview" locid="WinJS.UI.SplitView_part:splitview">The entire SplitView control.</part>
 /// <part name="splitview-pane" class="win-splitview-pane" locid="WinJS.UI.SplitView_part:splitview-pane">The element which hosts the SplitView's pane.</part>
 /// <part name="splitview-content" class="win-splitview-content" locid="WinJS.UI.SplitView_part:splitview-content">The element which hosts the SplitView's content.</part>
@@ -714,7 +714,9 @@ export class SplitView {
         }
     }
     
-    // TODO: doc comment
+    /// <field type="Boolean" hidden="true" locid="WinJS.UI.SplitView.hidden" helpKeyword="WinJS.UI.SplitView.hidden">
+    /// True if the SpitView's pane is currently collapsed.
+    /// </field>
     get hidden(): boolean {
         return this._state.hidden;
     }
