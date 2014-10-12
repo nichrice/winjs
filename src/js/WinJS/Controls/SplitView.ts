@@ -21,9 +21,11 @@ var Strings = {
     get duplicateConstruction() { return "Invalid argument: Controls may only be instantiated one time for each DOM element"; }
 };
 var ClassNames = {
+    // TODO: What should be the default height for vertical shown pane?
     splitView: "win-splitview",
     pane: "win-splitview-pane",
     content: "win-splitview-content",
+    // TODO: remove magic paneHidden/Shown classes. Remove corresponding LESS. Make hidden/shownMode classes public.
     paneHidden: "win-splitview-pane-hidden",
     paneShown: "win-splitview-pane-shown",
 
@@ -157,52 +159,53 @@ function executeTransform(element: HTMLElement, transformTo: string): Promise<an
     });
 }
 
-function growTransition(clipper: HTMLElement, grower: HTMLElement, options: { from: number; to: number; dimension: string; inverted: boolean; }): Promise<any> {
+function growTransition(elementClipper: HTMLElement, element: HTMLElement, options: { from: number; to: number; dimension: string; inverted: boolean; }): Promise<any> {
     var diff = options.inverted ? options.to - options.from : options.from - options.to;
     var translate = options.dimension === "width" ? "translateX" : "translateY";
     var size = options.dimension;
 
     // Set up
-    clipper.style[size] = options.to + "px";
-    clipper.style.transform = translate + "(" + diff + "px)";
-    grower.style[size] = options.to + "px";
-    grower.style.transform = translate + "(" + -diff + "px)";
+    elementClipper.style[size] = options.to + "px";
+    elementClipper.style.transform = translate + "(" + diff + "px)";
+    element.style[size] = options.to + "px";
+    element.style.transform = translate + "(" + -diff + "px)";
 
     // Resolve styles
-    getComputedStyle(clipper).opacity;
-    getComputedStyle(grower).opacity;
+    getComputedStyle(elementClipper).opacity;
+    getComputedStyle(element).opacity;
     
     // Animate
     return Promise.join([
-        executeTransform(clipper,  ""),
-        executeTransform(grower, "")
+        executeTransform(elementClipper,  ""),
+        executeTransform(element, "")
     ]);
 }
 
-function shrinkTransition(clipper: HTMLElement, grower: HTMLElement, options: { from: number; to: number; dimension: string; inverted: boolean; }): Promise<any> {
+function shrinkTransition(elementClipper: HTMLElement, element: HTMLElement, options: { from: number; to: number; dimension: string; inverted: boolean; }): Promise<any> {
     var diff = options.inverted ? options.from - options.to : options.to - options.from;
     var translate = options.dimension === "width" ? "translateX" : "translateY";
 
     // Set up
-    clipper.style.transform = "";
-    grower.style.transform = "";
+    elementClipper.style.transform = "";
+    element.style.transform = "";
 
     // Resolve styles
-    getComputedStyle(clipper).opacity;
-    getComputedStyle(grower).opacity;
+    getComputedStyle(elementClipper).opacity;
+    getComputedStyle(element).opacity;
 
     // Animate
     return Promise.join([
-        executeTransform(clipper, translate + "(" + diff + "px)"),
-        executeTransform(grower, translate  + "(" + -diff + "px)")
+        executeTransform(elementClipper, translate + "(" + diff + "px)"),
+        executeTransform(element, translate  + "(" + -diff + "px)")
     ]);
 }
 
-function resizeTransition(clipper: HTMLElement, grower: HTMLElement, options: { from: number; to: number; dimension: string; inverted: boolean; }): Promise<any> {
+function resizeTransition(elementClipper: HTMLElement, element: HTMLElement, options: { from: number; to: number; dimension: string; inverted: boolean; }): Promise<any> {
+    // TODO: Support margin, padding, and border on element.
     if (options.to > options.from) {
-        return growTransition(clipper, grower, options);
+        return growTransition(elementClipper, element, options);
     } else if (options.to < options.from) {
-        return shrinkTransition(clipper, grower, options);
+        return shrinkTransition(elementClipper, element, options);
     }
 }
 
@@ -767,6 +770,7 @@ export class SplitView {
     }
 
     private _initializeDom(root: HTMLElement): void {
+        // TODO: first div is pane. everything else is content
         var paneEl = <HTMLElement>root.querySelector("." + ClassNames.pane) || _Global.document.createElement("div");
         _ElementUtilities.addClass(paneEl, ClassNames.pane);
 
@@ -824,7 +828,6 @@ export class SplitView {
     }
 
     // TODO: How to say a class (not an object) whose instances implement an interface?
-    // TODO: public because needs to be accessed by states
     _setState(NewState: any, arg0?: any) {
         if (!this._disposed) {
             this._state && this._state.exit();
