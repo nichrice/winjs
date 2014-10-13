@@ -38,13 +38,13 @@
     overflow: hidden;
   }
 
-  &.win-splitview-paneshownmode {
+  &.win-splitview-pane-shown {
     &.win-splitview-placementtop {
       .win-splitview-pane {
         height: 320px;
       }
 
-      &.win-splitview-paneoverlaymode .win-splitview-panewrapper {
+      &.win-splitview-overlaymode .win-splitview-panewrapper {
         position: absolute;
         top: 0;
         left: 0;
@@ -57,7 +57,7 @@
         height: 320px;
       }
 
-      &.win-splitview-paneoverlaymode .win-splitview-panewrapper {
+      &.win-splitview-overlaymode .win-splitview-panewrapper {
         position: absolute;
         bottom: 0;
         left: 0;
@@ -71,7 +71,7 @@
         width: 320px;
       }
 
-      &.win-splitview-paneoverlaymode .win-splitview-panewrapper {
+      &.win-splitview-overlaymode .win-splitview-panewrapper {
         position: absolute;
         top: 0;
         left: 0;
@@ -86,7 +86,7 @@
         width: 320px;
       }
 
-      &.win-splitview-paneoverlaymode .win-splitview-panewrapper {
+      &.win-splitview-overlaymode .win-splitview-panewrapper {
         position: absolute;
         top: 0;
         left: auto;
@@ -94,13 +94,9 @@
         height: 100%;
       }
     }
-
-    .win-splitview-pane-hidden {
-      display: none;
-    }
   }
 
-  &.win-splitview-panehiddenmode {
+  &.win-splitview-pane-hidden {
     .win-splitview-paneplaceholder {
       display: none;
     }
@@ -118,13 +114,9 @@
         width: 0;
       }
     }
-
-    .win-splitview-pane-shown {
-      display: none;
-    }
   }
 
-  &.win-splitview-paneinlinemode .win-splitview-paneplaceholder {
+  &.win-splitview-inlinemode .win-splitview-paneplaceholder {
     display: none;
   }
 }

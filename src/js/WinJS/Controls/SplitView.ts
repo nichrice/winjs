@@ -25,7 +25,7 @@ var ClassNames = {
     splitView: "win-splitview",
     pane: "win-splitview-pane",
     content: "win-splitview-content",
-    // TODO: remove magic paneHidden/Shown classes. Remove corresponding LESS. Make hidden/shownMode classes public.
+    // hidden/shown
     paneHidden: "win-splitview-pane-hidden",
     paneShown: "win-splitview-pane-shown",
 
@@ -38,11 +38,8 @@ var ClassNames = {
     _placementTop: "win-splitview-placementtop",
     _placementBottom: "win-splitview-placementbottom",
     // display mode
-    _paneInlineMode: "win-splitview-paneinlinemode",
-    _paneOverlayMode: "win-splitview-paneoverlaymode",
-    // hidden/shown
-    _paneHiddenMode: "win-splitview-panehiddenmode",
-    _paneShownMode: "win-splitview-paneshownmode"
+    _inlineMode: "win-splitview-inlinemode",
+    _overlayMode: "win-splitview-overlaymode"
 };
 var EventNames = {
     beforeShow: "beforeshow",
@@ -81,8 +78,8 @@ var Placement = {
     bottom: "bottom"
 };
 var shownDisplayModeClassMap = {};
-shownDisplayModeClassMap[ShownDisplayMode.overlay] = ClassNames._paneOverlayMode;
-shownDisplayModeClassMap[ShownDisplayMode.inline] = ClassNames._paneInlineMode;
+shownDisplayModeClassMap[ShownDisplayMode.overlay] = ClassNames._overlayMode;
+shownDisplayModeClassMap[ShownDisplayMode.inline] = ClassNames._inlineMode;
 var placementClassMap = {};
 placementClassMap[Placement.left] = ClassNames._placementLeft;
 placementClassMap[Placement.right] = ClassNames._placementRight;
@@ -787,7 +784,7 @@ export class SplitView {
         root["winControl"] = this;
         _ElementUtilities.addClass(root, ClassNames.splitView);
         _ElementUtilities.addClass(root, "win-disposable");
-        _ElementUtilities.addClass(root, ClassNames._paneHiddenMode);
+        _ElementUtilities.addClass(root, ClassNames.paneHidden);
         
         this._dom = {
             root: root,
@@ -933,14 +930,14 @@ export class SplitView {
     
     _renderShownMode(): void {
         this._isShownMode = true;
-        _ElementUtilities.removeClass(this._dom.root, ClassNames._paneHiddenMode);
-        _ElementUtilities.addClass(this._dom.root, ClassNames._paneShownMode);
+        _ElementUtilities.removeClass(this._dom.root, ClassNames.paneHidden);
+        _ElementUtilities.addClass(this._dom.root, ClassNames.paneShown);
     }
     
     _renderHiddenMode(): void {
         this._isShownMode = false;
-        _ElementUtilities.removeClass(this._dom.root, ClassNames._paneShownMode);
-        _ElementUtilities.addClass(this._dom.root, ClassNames._paneHiddenMode);
+        _ElementUtilities.removeClass(this._dom.root, ClassNames.paneShown);
+        _ElementUtilities.addClass(this._dom.root, ClassNames.paneHidden);
     }
     
     private _rendered: {
