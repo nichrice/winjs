@@ -4942,6 +4942,8 @@ module WinJSTests {
 
         testDefaultPagesToPrefetch = function (complete) {
             // Verifies the correct default values for ListView.maxTrailingPages and ListView.maxLeadingPages are used when no values are set by the user.
+            WinJS.Utilities._setIsiOS(false);
+
             var viewPortHeight = 300,
                 count = 200,
                 list = new WinJS.Binding.List(initData(count));
@@ -4964,12 +4966,10 @@ module WinJSTests {
                 },
             });
 
-            var expectedLeadingPages = WinJS.UI._VirtualizeContentsView._defaultPagesToPrefetch,
-                expectedTrailingPages = WinJS.UI._VirtualizeContentsView._defaultPagesToPrefetch;
+            var expectedLeadingPages = listView.maxLeadingPages,
+                expectedTrailingPages = listView.maxTrailingPages;
 
-            validatePagesToPrefetch(listView, expectedLeadingPages, expectedTrailingPages, viewPortHeight).done(function () {
-                complete();
-            });
+            validatePagesToPrefetch(listView, expectedLeadingPages, expectedTrailingPages, viewPortHeight).done(complete);
         };
 
         testIOSDefaultPagesToPrefetch = function (complete) {
@@ -5001,9 +5001,7 @@ module WinJSTests {
             var expectedLeadingPages = WinJS.UI._VirtualizeContentsView._iOSMaxLeadingPages,
                 expectedTrailingPages = WinJS.UI._VirtualizeContentsView._iOSMaxTrailingPages;
 
-            validatePagesToPrefetch(listView, expectedLeadingPages, expectedTrailingPages, viewPortHeight).done(function () {
-                complete();
-            });
+            validatePagesToPrefetch(listView, expectedLeadingPages, expectedTrailingPages, viewPortHeight).done(complete);
         };
 
         testCustomPagesToPrefetch = function (complete) {
@@ -5034,9 +5032,7 @@ module WinJSTests {
                 maxTrailingPages: expectedTrailingPages,
             });
 
-            validatePagesToPrefetch(listView, expectedLeadingPages, expectedTrailingPages, viewPortHeight).done(function () {
-                complete();
-            });
+            validatePagesToPrefetch(listView, expectedLeadingPages, expectedTrailingPages, viewPortHeight).done(complete);
         };
 
         testPrefetchAllPages = function (complete) {
@@ -5076,9 +5072,7 @@ module WinJSTests {
                 // With no virtualization we expect all items to be realized.
                 var expectedRealizedCount = count;
                 LiveUnit.Assert.areEqual(expectedRealizedCount, listView.element.querySelectorAll(".win-container:not(.win-backdrop)").length, "With no virtualization, we expect all items to be realized.");
-            }).done(function () { 
-                complete();
-            });
+            }).done(complete);
         };
 
         // Some browsers do not have good FlexBox behavior so we have to disable

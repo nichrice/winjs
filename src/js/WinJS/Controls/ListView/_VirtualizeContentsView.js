@@ -114,7 +114,8 @@ define([
 
                 this._listView = listView;
                 this._forceRelayout = false;
-                this._configureVirtualization();
+                this.maxLeadingPages = _BaseUtils._isiOS ? _VirtualizeContentsView._iOSMaxLeadingPages : _VirtualizeContentsView._defaultPagesToPrefetch;
+                this.maxTrailingPages = _BaseUtils._isiOS ? _VirtualizeContentsView._iOSMaxTrailingPages : _VirtualizeContentsView._defaultPagesToPrefetch;
                 this.items = new _ItemsContainer._ItemsContainer(listView);
                 this.firstIndexDisplayed = -1;
                 this.lastIndexDisplayed = -1;
@@ -1639,16 +1640,6 @@ define([
                     };
                     this._listView._writeProfilerMark("_forceItemsBlocksInDOM groups(" + firstGroupIndex + "-" + lastGroupIndex + ") blocks(" + firstBlock + "-" + lastBlock + ") added(" + added + ") removed(" + removed + "),info");
                     this._listView._writeProfilerMark(perfId + "StopTM");
-                },
-
-                _configureVirtualization: function VirtualizeContentsView_configureVirtualization() {
-                    if (_BaseUtils._isiOS) {
-                        this.maxLeadingPages = _VirtualizeContentsView._iOSMaxLeadingPages;
-                        this.maxTrailingPages = _VirtualizeContentsView._iOSMaxTrailingPages;
-                    } else {
-                        this.maxLeadingPages = _VirtualizeContentsView._defaultPagesToPrefetch;
-                        this.maxTrailingPages = _VirtualizeContentsView._defaultPagesToPrefetch;
-                    }
                 },
 
                 _realizePageImpl: function VirtualizeContentsView_realizePageImpl() {
