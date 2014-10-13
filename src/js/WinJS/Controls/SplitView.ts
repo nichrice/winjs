@@ -21,7 +21,6 @@ var Strings = {
     get duplicateConstruction() { return "Invalid argument: Controls may only be instantiated one time for each DOM element"; }
 };
 var ClassNames = {
-    // TODO: What should be the default height for vertical shown pane?
     splitView: "win-splitview",
     pane: "win-splitview-pane",
     content: "win-splitview-content",
@@ -48,7 +47,6 @@ var EventNames = {
     afterHide: "afterhide"
 };
 
-// TODO: switch to enum? con: lose string debuggability. pro: gain type checking for properties.
 var ShownDisplayMode = {
     /// <field locid="WinJS.UI.SplitView.ShownDisplayMode.overlay" helpKeyword="WinJS.UI.SplitView.ShownDisplayMode.overlay">
     /// When the pane is shown, it doesn't take up any space and it is light dismissable.
@@ -134,7 +132,6 @@ function measureAbsolutePosition(element: HTMLElement) {
 }
 
 function executeTransform(element: HTMLElement, transformTo: string): Promise<any> {
-    // TODO: What's the appropriate resize animation duration and curve?
     var duration = 367 * _TransitionAnimation._animationFactor;
     element.style.transition = duration + "ms transform cubic-bezier(0.1, 0.9, 0.2, 1)";
     element.style.transform = transformTo;
@@ -676,15 +673,6 @@ export class SplitView {
         return this._dom.content;
     }
 
-    // When do we need to size placeholder?
-    // - overlay: hidden -> shown
-    // - overlay: change placement (horizontal <-> vertical)
-    // - shown: inline -> overlay
-    //
-    // - shown/hidden
-    // - display mode: overlay/inline
-    // - placement: left/right/top/bottom
-
     private _shownDisplayMode: string;
     /// <field type="String" oamOptionsDatatype="WinJS.UI.SplitView.ShownDisplayMode" locid="WinJS.UI.SplitView.shownDisplayMode" helpKeyword="WinJS.UI.SplitView.shownDisplayMode">
     /// Gets or sets the display mode of the SplitView's pane.
@@ -767,12 +755,19 @@ export class SplitView {
     }
 
     private _initializeDom(root: HTMLElement): void {
-        // TODO: first div is pane. everything else is content
-        var paneEl = <HTMLElement>root.querySelector("." + ClassNames.pane) || _Global.document.createElement("div");
+        // The first child is the pane
+        var paneEl = <HTMLElement>root.firstElementChild || _Global.document.createElement("div");
         _ElementUtilities.addClass(paneEl, ClassNames.pane);
-
-        var contentEl = <HTMLElement>root.querySelector("." + ClassNames.content) || _Global.document.createElement("div");
+        
+        // All other children are members of the content
+        var contentEl = _Global.document.createElement("div");
         _ElementUtilities.addClass(contentEl, ClassNames.content);
+        var child = paneEl.nextSibling;
+        while (child) {
+            var sibling = child.nextSibling;
+            contentEl.appendChild(child);
+            child = sibling;
+        }
         
         var paneWrapperEl = _Global.document.createElement("div");
         paneWrapperEl.className = ClassNames._paneWrapper;
@@ -823,8 +818,7 @@ export class SplitView {
     get _horizontal(): boolean {
         return this.placement === Placement.left || this.placement === Placement.right;
     }
-
-    // TODO: How to say a class (not an object) whose instances implement an interface?
+    
     _setState(NewState: any, arg0?: any) {
         if (!this._disposed) {
             this._state && this._state.exit();
