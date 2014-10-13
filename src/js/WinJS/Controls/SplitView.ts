@@ -13,8 +13,6 @@ import _Signal = require('../_Signal');
 import Animations = require('../Animations');
 import _TransitionAnimation = require('../Animations/_TransitionAnimation');
 
-// TODO: Do we need to require 'require-style!less/controls'?
-
 "use strict";
 
 var Strings = {
@@ -195,7 +193,6 @@ function shrinkTransition(elementClipper: HTMLElement, element: HTMLElement, opt
 }
 
 function resizeTransition(elementClipper: HTMLElement, element: HTMLElement, options: { from: number; to: number; dimension: string; inverted: boolean; }): Promise<any> {
-    // TODO: Support margin, padding, and border on element.
     if (options.to > options.from) {
         return growTransition(elementClipper, element, options);
     } else if (options.to < options.from) {
@@ -582,9 +579,6 @@ module States {
 /// </field>
 /// <icon src="ui_winjs.ui.splitview.12x12.png" width="12" height="12" />
 /// <icon src="ui_winjs.ui.splitview.16x16.png" width="16" height="16" />
-
-// TODO: Fill in htmlSnippet tag based on what the developer can specify as the content of the SplitView.
-
 /// <htmlSnippet supportsContent="true"><![CDATA[<div data-win-control="WinJS.UI.SplitView"></div>]]></htmlSnippet>
 /// <event name="beforeshow" locid="WinJS.UI.SplitView_e:beforeshow">Raised just before showing the pane. Call preventDefault on this event to stop the pane from being shown.</event>
 /// <event name="aftershow" locid="WinJS.UI.SplitView_e:aftershow">Raised immediately after the pane is fully shown.</event>
@@ -870,48 +864,51 @@ export class SplitView {
     }
     
     _setContentRect(contentSize: { width: number; height: number }, contentPosition: { left: number; top: number }) {
-        this._dom.content.style.left = contentPosition.left + "px";
-        this._dom.content.style.top = contentPosition.top + "px";
-        this._dom.content.style.height = contentSize.height + "px";
-        this._dom.content.style.width = contentSize.width + "px";
+        var contentStyle = this._dom.content.style;
+        contentStyle.left = contentPosition.left + "px";
+        contentStyle.top = contentPosition.top + "px";
+        contentStyle.height = contentSize.height + "px";
+        contentStyle.width = contentSize.width + "px";
     }
     
     _prepareAnimation(paneSize: { width: number; height: number }, panePosition: { left: number; top: number }, contentSize: { width: number; height: number }, contentPosition: { left: number; top: number }): void {
-        this._dom.paneWrapper.style.position = "absolute";
-        this._dom.paneWrapper.style.zIndex = "1";
-        this._dom.paneWrapper.style.left = panePosition.left + "px";
-        this._dom.paneWrapper.style.top = panePosition.top + "px";
-        this._dom.paneWrapper.style.height = paneSize.height + "px";
-        this._dom.paneWrapper.style.width = paneSize.width + "px";
+        var paneWrapperStyle = this._dom.paneWrapper.style;
+        paneWrapperStyle.position = "absolute";
+        paneWrapperStyle.zIndex = "1";
+        paneWrapperStyle.left = panePosition.left + "px";
+        paneWrapperStyle.top = panePosition.top + "px";
+        paneWrapperStyle.height = paneSize.height + "px";
+        paneWrapperStyle.width = paneSize.width + "px";
         
-        this._dom.content.style.position = "absolute";
-        this._dom.content.style.zIndex = "0";
+        var contentStyle = this._dom.content.style;
+        contentStyle.position = "absolute";
+        contentStyle.zIndex = "0";
         this._setContentRect(contentSize, contentPosition);
     }
     
     _clearAnimation(): void {
-        // TODO: cssText?
-        // TODO: cache style object? 
+        var paneWrapperStyle = this._dom.paneWrapper.style;
+        paneWrapperStyle.position = "";
+        paneWrapperStyle.zIndex = "";
+        paneWrapperStyle.left = "";
+        paneWrapperStyle.top = "";
+        paneWrapperStyle.height = "";
+        paneWrapperStyle.width = "";
+        paneWrapperStyle.transform = "";
         
-        this._dom.paneWrapper.style.position = "";
-        this._dom.paneWrapper.style.zIndex = "";
-        this._dom.paneWrapper.style.left = "";
-        this._dom.paneWrapper.style.top = "";
-        this._dom.paneWrapper.style.height = "";
-        this._dom.paneWrapper.style.width = "";
-        this._dom.paneWrapper.style.transform = "";
+        var contentStyle = this._dom.content.style;
+        contentStyle.position = "";
+        contentStyle.zIndex = "";
+        contentStyle.left = "";
+        contentStyle.top = "";
+        contentStyle.height = "";
+        contentStyle.width = "";
+        contentStyle.transform = "";
         
-        this._dom.content.style.position = "";
-        this._dom.content.style.zIndex = "";
-        this._dom.content.style.left = "";
-        this._dom.content.style.top = "";
-        this._dom.content.style.height = "";
-        this._dom.content.style.width = "";
-        this._dom.content.style.transform = "";
-        
-        this._dom.pane.style.height = "";
-        this._dom.pane.style.width = "";
-        this._dom.pane.style.transform = "";
+        var paneStyle = this._dom.pane.style;
+        paneStyle.height = "";
+        paneStyle.width = "";
+        paneStyle.transform = "";
     }
 
     _paneSlideIn(shownPaneSize: { width: number; height: number; }): Promise<any> {
@@ -944,7 +941,7 @@ export class SplitView {
     _updateDomImpl(): void {
         var paneShouldBeFirst = this.placement === Placement.left || this.placement === Placement.top;
         if (paneShouldBeFirst !== this._rendered.paneIsFirst) {
-            // TODO: restore focus?
+            // TODO: restore focus
             if (paneShouldBeFirst) {
                 this._dom.root.appendChild(this._dom.panePlaceholder);
                 this._dom.root.appendChild(this._dom.paneWrapper);
