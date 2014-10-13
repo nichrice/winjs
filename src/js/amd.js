@@ -49,14 +49,16 @@ var define;
         });
     }
 
-    function resolve(dependencies, exports) {
+    function resolve(dependencies, parent, exports) {
         return dependencies.map(function (depName) {
             if (depName === 'exports') {
                 return exports;
             }
 
             if (depName === 'require') {
-                return require;
+                return function (dependencies, factory) {
+                    require(normalize(parent, dependencies), factory);
+                }
             }
 
             var dep = defined[depName];
@@ -65,9 +67,8 @@ var define;
             }
 
             if (!dep.resolved) {
-                dep.resolved = load(dep.dependencies, dep.factory, dep.exports);
-                // exports shadows whatever the module factory returns
-                if (dep.exports) {
+                dep.resolved = load(dep.dependencies, dep.factory, depName, dep.exports);
+                if (typeof dep.resolved === "undefined") {
                     dep.resolved = dep.exports;
                 }
             }
@@ -76,8 +77,8 @@ var define;
         });
     }
 
-    function load(dependencies, factory, exports) {
-        var deps = resolve(dependencies, exports);
+    function load(dependencies, factory, parent, exports) {
+        var deps = resolve(dependencies, parent, exports);
         if (factory && factory.apply) {
             return factory.apply(null, deps);
         } else {
@@ -88,7 +89,7 @@ var define;
         if (!Array.isArray(dependencies)) {
             dependencies = [dependencies];
         }
-        load(dependencies, factory);
+        load(dependencies, factory, "");
     };
 
 
