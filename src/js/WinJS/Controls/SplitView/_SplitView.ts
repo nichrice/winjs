@@ -318,7 +318,7 @@ module States {
                     this.splitView.hidden = true;
                     this.splitView.shownDisplayMode = ShownDisplayMode.overlay;
                     this.splitView.placement = Placement.left;
-                    _Control.setOptions(this, options);
+                    _Control.setOptions(this.splitView, options);
                     
                     return inDom(this.splitView._dom.root).then(() => {
                         this.splitView._rtl = _Global.getComputedStyle(this.splitView._dom.root).direction === 'rtl';
