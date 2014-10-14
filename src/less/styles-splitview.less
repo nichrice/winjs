@@ -4,6 +4,9 @@
 @import "mixins.less";
 
 .win-splitview {
+    @shown-pane-width: 320px;
+    @shown-pane-height: 320px;
+    
     position: relative;
     width: 100%;
     height: 100%;
@@ -39,7 +42,7 @@
     &.win-splitview-pane-shown {
         &.win-splitview-placementtop {
             .win-splitview-pane {
-                height: 320px;
+                height: @shown-pane-height;
             }
 
             &.win-splitview-overlaymode .win-splitview-panewrapper {
@@ -52,7 +55,7 @@
 
         &.win-splitview-placementbottom {
             .win-splitview-pane {
-                height: 320px;
+                height: @shown-pane-height;
             }
 
             &.win-splitview-overlaymode .win-splitview-panewrapper {
@@ -66,7 +69,7 @@
         &.win-splitview-placementleft,
         &.win-splitview-placementright.win-splitview-rtl {
             .win-splitview-pane {
-                width: 320px;
+                width: @shown-pane-width;
             }
 
             &.win-splitview-overlaymode .win-splitview-panewrapper {
@@ -81,7 +84,7 @@
         &.win-splitview-placementright,
         &.win-splitview-placementleft.win-splitview-rtl {
             .win-splitview-pane {
-                width: 320px;
+                width: @shown-pane-width;
             }
 
             &.win-splitview-overlaymode .win-splitview-panewrapper {
