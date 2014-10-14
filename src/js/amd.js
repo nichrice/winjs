@@ -58,7 +58,7 @@ var define;
             if (depName === 'require') {
                 return function (dependencies, factory) {
                     require(normalize(parent, dependencies), factory);
-                }
+                };
             }
 
             var dep = defined[depName];
