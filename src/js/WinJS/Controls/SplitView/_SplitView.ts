@@ -3,6 +3,7 @@
 import _Dispose = require('../../Utilities/_Dispose');
 import _Global = require('../../Core/_Global');
 import _Base = require('../../Core/_Base');
+import _BaseUtils = require('../../Core/_BaseUtils');
 import _Events = require('../../Core/_Events');
 import _ErrorFromName = require('../../Core/_ErrorFromName');
 import _Control = require('../../Utilities/_Control');
@@ -129,10 +130,16 @@ function measureAbsolutePosition(element: HTMLElement) {
     };
 }
 
-function executeTransform(element: HTMLElement, transformTo: string): Promise<any> {
-    var duration = 367 * _TransitionAnimation._animationFactor;
-    element.style.transition = duration + "ms transform cubic-bezier(0.1, 0.9, 0.2, 1)";
-    element.style.transform = transformTo;
+//
+// Resize animation
+//  The resize animation requires 2 animations to run simultaneously in sync with each other. It's implemented
+//  without PVL because PVL doesn't provide a way to guarantee that 2 animations will start at the same time.
+//
+
+function transformWithTransition(element: HTMLElement, transition: { to: string; duration: number; timing: string; }): Promise<any> {
+    var duration = transition.duration * _TransitionAnimation._animationFactor;
+    element.style.transition = duration + "ms transform " + transition.timing;
+    element.style.transform = transition.to;
 
     return new Promise((c) => {
         var finish = function () {
@@ -167,9 +174,14 @@ function growTransition(elementClipper: HTMLElement, element: HTMLElement, optio
     getComputedStyle(element).opacity;
     
     // Animate
+    var transition = {
+        duration: 367,
+        timing: "cubic-bezier(0.1, 0.9, 0.2, 1)",
+        to: ""
+    };
     return Promise.join([
-        executeTransform(elementClipper,  ""),
-        executeTransform(element, "")
+        transformWithTransition(elementClipper,  transition),
+        transformWithTransition(element, transition)
     ]);
 }
 
@@ -186,9 +198,15 @@ function shrinkTransition(elementClipper: HTMLElement, element: HTMLElement, opt
     getComputedStyle(element).opacity;
 
     // Animate
+    var transition = {
+        duration: 367,
+        timing: "cubic-bezier(0.1, 0.9, 0.2, 1)"
+    };
+    var clipperTransition = _BaseUtils._merge(transition, { to: translate + "(" + diff + "px)" });
+    var elementTransition = _BaseUtils._merge(transition, { to: translate + "(" + -diff + "px)" });
     return Promise.join([
-        executeTransform(elementClipper, translate + "(" + diff + "px)"),
-        executeTransform(element, translate  + "(" + -diff + "px)")
+        transformWithTransition(elementClipper, clipperTransition),
+        transformWithTransition(element, elementTransition)
     ]);
 }
 
@@ -210,12 +228,12 @@ function cancelablePromise(animationPromise: Promise<any>) {
     });
 }
 
-function paneSlideIn(elements: any, offsets: any): Promise<any> {    
-    return cancelablePromise(Animations.paneSlideIn(elements, offsets));
+function showEdgeUI(elements: any, offsets: any): Promise<any> {    
+    return cancelablePromise(Animations.showEdgeUI(elements, offsets, { mechanism: "transition" }));
 }
 
-function paneSlideOut(elements: any, offsets: any): Promise<any> {
-    return cancelablePromise(Animations.paneSlideOut(elements, offsets));
+function hideEdgeUI(elements: any, offsets: any): Promise<any> {
+    return cancelablePromise(Animations.hideEdgeUI(elements, offsets, { mechanism: "transition" }));
 }
 
 function fadeIn(elements: any): Promise<any> {
@@ -933,11 +951,11 @@ class SplitView {
     }
 
     _paneSlideIn(shownPaneSize: { width: number; height: number; }): Promise<any> {
-        return paneSlideIn(this._dom.paneWrapper, this._getAnimationOffsets(shownPaneSize));
+        return showEdgeUI(this._dom.paneWrapper, this._getAnimationOffsets(shownPaneSize));
     }
 
     _paneSlideOut(shownPaneSize: { width: number; height: number; }): Promise<any> {
-        return paneSlideOut(this._dom.paneWrapper, this._getAnimationOffsets(shownPaneSize));
+        return hideEdgeUI(this._dom.paneWrapper, this._getAnimationOffsets(shownPaneSize));
     }
     
     private _rendered: {

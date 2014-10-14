@@ -375,9 +375,6 @@ export declare function turnstileBackwardIn(incoming: any): Promise<any>;
 **/
 export declare function turnstileBackwardOut(outgoing: any): Promise<any>;
 
-export declare function paneSlideIn(element: any, offset: any): Promise<any>;
-export declare function paneSlideOut(element: any, offset: any): Promise<any>;
-
 
 //#endregion export declare functions
 

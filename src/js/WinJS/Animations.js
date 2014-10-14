@@ -2415,38 +2415,6 @@ define([
                 exit: emptyAnimationFunction,
                 entrance: exports.enterPage
             };
-        },
-        
-        paneSlideIn: function (element, offsets) {
-            writeAnimationProfilerMark("showEdgeUI,StartTM"); 
-            var offsetArray = new OffsetArray(offsets, "WinJS-showEdgeUI", [{ top: "-70px", left: "0px" }]);
-            return _TransitionAnimation.executeTransition(
-                element,
-                {
-                    property: transformNames.cssName,
-                    delay: 0,
-                    duration: 500,
-                    timing: "cubic-bezier(0.1, 0.9, 0.2, 1)",
-                    from: translateCallback(offsetArray),
-                    to: "none"
-                })
-                .then(function () { writeAnimationProfilerMark("showEdgeUI,StopTM"); });
-        },
-        
-        paneSlideOut: function (element, offsets) {
-            writeAnimationProfilerMark("showEdgeUI,StartTM"); 
-            var offsetArray = new OffsetArray(offsets, "WinJS-showEdgeUI", [{ top: "-70px", left: "0px" }]);
-            return _TransitionAnimation.executeTransition(
-                element,
-                {
-                    property: transformNames.cssName,
-                    delay: 0,
-                    duration: 417,
-                    timing: "cubic-bezier(0.66, 0, 0, 1)",
-                    from: "none",
-                    to: translateCallback(offsetArray)
-                })
-                .then(function () { writeAnimationProfilerMark("showEdgeUI,StopTM"); });
         }
     });
 
