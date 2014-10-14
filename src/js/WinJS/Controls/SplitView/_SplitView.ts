@@ -14,6 +14,9 @@ import _Signal = require('../../_Signal');
 import Animations = require('../../Animations');
 import _TransitionAnimation = require('../../Animations/_TransitionAnimation');
 
+declare var require: any;
+require(["require-style!less/controls"]);
+
 "use strict";
 
 interface IRect {
@@ -280,37 +283,56 @@ interface ISplitViewState {
     splitView: SplitView;
 }
 
+// Transitions:
+//   When created, the control will take one of the following initialization transitions depending on
+//   how the control's APIs have been used by the time it is inserted into the DOM:
+//     Init -> Hidden
+//     Init -> Shown
+//   Following that, the life of the SplitView will be dominated by the following 3
+//   sequences of transitions. In geneneral, these sequences are uninterruptible.
+//     Hidden -> BeforeShow -> Hidden (when preventDefault is called on beforeshow event)
+//     Hidden -> BeforeShow -> Showing -> Shown
+//     Shown -> BeforeHide -> Hiding -> Hidden
+//     Shown -> BeforeHide -> Shown (when preventDefault is called on beforehide event)
+//   However, any state can be interrupted to go to the Disposed state:
+//     * -> Disposed
+
 module States {
     function updateDomImpl(): void {
         this.splitView._updateDomImpl();
     }
-
+    
+    // Initial state. Initializes state on the SplitView shared by the various states.
     export class Init implements ISplitViewState {
         private _hidden: boolean;
         
         splitView: SplitView;
         name = "Init";
         enter(options?: any) {
-            options = options || {};
-
-            this.splitView._cachedHiddenPaneThickness = null;
-
-            this.splitView.hidden = true;
-            this.splitView.shownDisplayMode = ShownDisplayMode.overlay;
-            this.splitView.placement = Placement.left;
-            _Control.setOptions(this, options);
-            
-            inDom(this.splitView._dom.root).then(() => {
-                this.splitView._rtl = _Global.getComputedStyle(this.splitView._dom.root).direction === 'rtl';
-                if (this.splitView._rtl) {
-                    _ElementUtilities.addClass(this.splitView._dom.root, ClassNames._rtl);
-                }
-                this.splitView._isShownMode = !this._hidden;
-                this.splitView._updateDomImpl();
-                this.splitView._setState(this._hidden ? Hidden : Shown);
+            interruptible(this, (ready) => {
+                return ready.then(() => {
+                    options = options || {};
+        
+                    this.splitView._cachedHiddenPaneThickness = null;
+        
+                    this.splitView.hidden = true;
+                    this.splitView.shownDisplayMode = ShownDisplayMode.overlay;
+                    this.splitView.placement = Placement.left;
+                    _Control.setOptions(this, options);
+                    
+                    return inDom(this.splitView._dom.root).then(() => {
+                        this.splitView._rtl = _Global.getComputedStyle(this.splitView._dom.root).direction === 'rtl';
+                        if (this.splitView._rtl) {
+                            _ElementUtilities.addClass(this.splitView._dom.root, ClassNames._rtl);
+                        }
+                        this.splitView._isShownMode = !this._hidden;
+                        this.splitView._updateDomImpl();
+                        this.splitView._setState(this._hidden ? Hidden : Shown);
+                    });
+                });
             });
         }
-        exit = _;
+        exit = cancelInterruptibles;
         get hidden(): boolean {
             return this._hidden;
         }
@@ -320,9 +342,10 @@ module States {
         hidePane() {
             this._hidden = true;
         }
-        updateDom = _;
+        updateDom = _; // Postponed until immediately before we switch to another state
     }
-
+    
+    // A rest state. The SplitView pane is hidden and is waiting for the app to call showPane.
     class Hidden implements ISplitViewState {
         splitView: SplitView;
         name = "Hidden";
@@ -340,7 +363,8 @@ module States {
         hidePane = _;
         updateDom = updateDomImpl;
     }
-
+    
+    // An event state. The SplitView fires the beforeshow event.
     class BeforeShow implements ISplitViewState {
         splitView: SplitView;
         name = "BeforeShow";
@@ -363,7 +387,8 @@ module States {
         hidePane = _;
         updateDom = updateDomImpl;
     }
-
+    
+    // An animation/event state. The SplitView plays its show animation and fires aftershow.
     class Showing implements ISplitViewState {
         private _hideIsPending: boolean;
 
@@ -398,9 +423,10 @@ module States {
         hidePane() {
             this._hideIsPending = true;
         }
-        updateDom = _;
+        updateDom = _; // Postponed until immediately before we switch to another state
     }
-
+    
+    // A rest state. The SplitView pane is shown and is waiting for the app to trigger hidePane.
     class Shown implements ISplitViewState {
         splitView: SplitView;
         name = "Shown";
@@ -418,7 +444,8 @@ module States {
         }
         updateDom = updateDomImpl;
     }
-
+    
+    // An event state. The SplitView fires the beforehide event.
     class BeforeHide implements ISplitViewState {
         splitView: SplitView;
         name = "BeforeHide";
@@ -430,7 +457,7 @@ module States {
                     if (shouldHide) {
                         this.splitView._setState(Hiding);
                     } else {
-                        this.splitView._setState(Shown, { hideIsPending: false });
+                        this.splitView._setState(Shown);
                     }
                 });
             });
@@ -441,7 +468,8 @@ module States {
         hidePane = _;
         updateDom = updateDomImpl;
     }
-
+    
+    // An animation/event state. The SpitView plays the hide animation and fires the afterhide event.
     class Hiding implements ISplitViewState {
         private _showIsPending: boolean;
 
@@ -472,16 +500,16 @@ module States {
         hidePane() {
             this._showIsPending = false;
         }
-        updateDom = _;
+        updateDom = _; // Postponed until immediately before we switch to another state
     }
 
     export class Disposed implements ISplitViewState {
         splitView: SplitView;
         name = "Disposed";
-        hidden = false;
         enter() {
         }
         exit = _;
+        hidden = true;
         showPane = _;
         hidePane = _;
         updateDom = _;
