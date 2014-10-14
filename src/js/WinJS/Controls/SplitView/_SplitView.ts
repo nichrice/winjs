@@ -619,12 +619,10 @@ export class SplitView {
         return this._shownDisplayMode;
     }
     set shownDisplayMode(value: string) {
-        if (this._shownDisplayMode !== value) {
-            if (ShownDisplayMode[value]) {
-                this._shownDisplayMode = value;
-                this._cachedHiddenPaneThickness = null;
-                this._state.updateDom();
-            }
+        if (ShownDisplayMode[value] && this._shownDisplayMode !== value) {
+            this._shownDisplayMode = value;
+            this._cachedHiddenPaneThickness = null;
+            this._state.updateDom();
         }
     }
 
@@ -636,12 +634,10 @@ export class SplitView {
         return this._placement;
     }
     set placement(value: string) {
-        if (this._placement !== value) {
-            if (Placement[value]) {
-                this._placement = value;
-                this._cachedHiddenPaneThickness = null;
-                this._state.updateDom();
-            }
+        if (Placement[value] && this._placement !== value) {
+            this._placement = value;
+            this._cachedHiddenPaneThickness = null;
+            this._state.updateDom();
         }
     }
     
@@ -707,6 +703,7 @@ export class SplitView {
             child = sibling;
         }
         
+        // paneWrapper's purpose is to clip the pane during the pane resize animation
         var paneWrapperEl = _Global.document.createElement("div");
         paneWrapperEl.className = ClassNames._paneWrapper;
         paneWrapperEl.appendChild(paneEl);
@@ -1045,7 +1042,10 @@ export class SplitView {
             addClass(this._dom.root, shownDisplayModeClassMap[this.shownDisplayMode]);
             this._rendered.shownDisplayMode = this.shownDisplayMode;
         }
-
+        
+        // panePlaceholder's purpose is to take up the amount of space occupied by the
+        // hidden pane while the pane is shown in overlay mode. Without this, the content
+        // would shift as the pane shows and hides in overlay mode.
         var width: string, height: string;
         if (this._isShownMode && this.shownDisplayMode === ShownDisplayMode.overlay) {
             var hiddenPaneThickness = this._getHiddenPaneThickness();
@@ -1075,5 +1075,5 @@ _Base.Class.mix(SplitView, _Events.createEventProperties(
     EventNames.afterShow,
     EventNames.beforeHide,
     EventNames.afterHide
-    ));
+));
 _Base.Class.mix(SplitView, _Control.DOMEventMixin);
