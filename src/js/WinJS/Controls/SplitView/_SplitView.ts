@@ -150,8 +150,8 @@ function transformWithTransition(element: HTMLElement, transition: { to: string;
         };
 
         // Watch dog timeout
-        var timeoutId = setTimeout(function () {
-            timeoutId = setTimeout(finish, duration);
+        var timeoutId = _Global.setTimeout(function () {
+            timeoutId = _Global.setTimeout(finish, duration);
         }, 50);
 
         element.addEventListener("transitionend", finish);
@@ -705,7 +705,88 @@ class SplitView {
             panePlaceholderHeight: undefined
         };
     }
-
+    
+    private _setContentRect(contentSize: { width: number; height: number }, contentPosition: { left: number; top: number }) {
+        var contentStyle = this._dom.content.style;
+        contentStyle.left = contentPosition.left + "px";
+        contentStyle.top = contentPosition.top + "px";
+        contentStyle.height = contentSize.height + "px";
+        contentStyle.width = contentSize.width + "px";
+    }
+    
+    private _prepareAnimation(paneSize: { width: number; height: number }, panePosition: { left: number; top: number }, contentSize: { width: number; height: number }, contentPosition: { left: number; top: number }): void {
+        var paneWrapperStyle = this._dom.paneWrapper.style;
+        paneWrapperStyle.position = "absolute";
+        paneWrapperStyle.zIndex = "1";
+        paneWrapperStyle.left = panePosition.left + "px";
+        paneWrapperStyle.top = panePosition.top + "px";
+        paneWrapperStyle.height = paneSize.height + "px";
+        paneWrapperStyle.width = paneSize.width + "px";
+        
+        var contentStyle = this._dom.content.style;
+        contentStyle.position = "absolute";
+        contentStyle.zIndex = "0";
+        this._setContentRect(contentSize, contentPosition);
+    }
+    
+    private _clearAnimation(): void {
+        var paneWrapperStyle = this._dom.paneWrapper.style;
+        paneWrapperStyle.position = "";
+        paneWrapperStyle.zIndex = "";
+        paneWrapperStyle.left = "";
+        paneWrapperStyle.top = "";
+        paneWrapperStyle.height = "";
+        paneWrapperStyle.width = "";
+        paneWrapperStyle.transform = "";
+        
+        var contentStyle = this._dom.content.style;
+        contentStyle.position = "";
+        contentStyle.zIndex = "";
+        contentStyle.left = "";
+        contentStyle.top = "";
+        contentStyle.height = "";
+        contentStyle.width = "";
+        contentStyle.transform = "";
+        
+        var paneStyle = this._dom.pane.style;
+        paneStyle.height = "";
+        paneStyle.width = "";
+        paneStyle.transform = "";
+    }
+    
+    private _getHiddenContentSize(shownContentSize: { width: number; height: number }, hiddenPaneThickness: number, shownPaneThickness: number): { width: number; height: number } {
+        if (this.shownDisplayMode === ShownDisplayMode.overlay) {
+            return shownContentSize;
+        } else {
+            var paneDiff = shownPaneThickness - hiddenPaneThickness;
+            return this._horizontal ? {
+                width: shownContentSize.width + paneDiff,
+                height: shownContentSize.height
+            } : {
+                width: shownContentSize.width,
+                height: shownContentSize.height + paneDiff
+            }
+        }
+    }
+    
+    private _getHiddenContentPosition(shownContentPosition: { left: number; top: number }, hiddenPaneThickness: number, shownPaneThickness: number): { left: number; top: number } {
+        if (this.shownDisplayMode === ShownDisplayMode.overlay) {
+            return shownContentPosition;
+        } else {
+            var placementRight = this._rtl ? Placement.left : Placement.right;
+            var sign = this.placement === placementRight || this.placement === Placement.bottom ? 0 : -1;
+            var paneDiff = shownPaneThickness - hiddenPaneThickness;
+            
+            return this._horizontal ? {
+                left: shownContentPosition.left + sign * paneDiff,
+                top: shownContentPosition.top  
+            } : {
+                left: shownContentPosition.left,
+                top: shownContentPosition.top + sign * paneDiff
+            };
+        }
+    }
+    
     private _getAnimationOffsets(shownPaneSize: { width: number; height: number; }): { top: string; left: string; } {
         var placementLeft = this._rtl ? Placement.right : Placement.left;
         return this._horizontal ? {
@@ -715,6 +796,14 @@ class SplitView {
             left: "0px",
             top: (this.placement === Placement.top ? -1 : 1) * shownPaneSize.height + "px"
         };
+    }
+    
+    private _paneSlideIn(shownPaneSize: { width: number; height: number; }): Promise<any> {
+        return showEdgeUI(this._dom.paneWrapper, this._getAnimationOffsets(shownPaneSize));
+    }
+
+    private _paneSlideOut(shownPaneSize: { width: number; height: number; }): Promise<any> {
+        return hideEdgeUI(this._dom.paneWrapper, this._getAnimationOffsets(shownPaneSize));
     }
 
     //
@@ -776,87 +865,7 @@ class SplitView {
         return this._cachedHiddenPaneThickness;
     }
     
-    _setContentRect(contentSize: { width: number; height: number }, contentPosition: { left: number; top: number }) {
-        var contentStyle = this._dom.content.style;
-        contentStyle.left = contentPosition.left + "px";
-        contentStyle.top = contentPosition.top + "px";
-        contentStyle.height = contentSize.height + "px";
-        contentStyle.width = contentSize.width + "px";
-    }
-    
-    _prepareAnimation(paneSize: { width: number; height: number }, panePosition: { left: number; top: number }, contentSize: { width: number; height: number }, contentPosition: { left: number; top: number }): void {
-        var paneWrapperStyle = this._dom.paneWrapper.style;
-        paneWrapperStyle.position = "absolute";
-        paneWrapperStyle.zIndex = "1";
-        paneWrapperStyle.left = panePosition.left + "px";
-        paneWrapperStyle.top = panePosition.top + "px";
-        paneWrapperStyle.height = paneSize.height + "px";
-        paneWrapperStyle.width = paneSize.width + "px";
-        
-        var contentStyle = this._dom.content.style;
-        contentStyle.position = "absolute";
-        contentStyle.zIndex = "0";
-        this._setContentRect(contentSize, contentPosition);
-    }
-    
-    _clearAnimation(): void {
-        var paneWrapperStyle = this._dom.paneWrapper.style;
-        paneWrapperStyle.position = "";
-        paneWrapperStyle.zIndex = "";
-        paneWrapperStyle.left = "";
-        paneWrapperStyle.top = "";
-        paneWrapperStyle.height = "";
-        paneWrapperStyle.width = "";
-        paneWrapperStyle.transform = "";
-        
-        var contentStyle = this._dom.content.style;
-        contentStyle.position = "";
-        contentStyle.zIndex = "";
-        contentStyle.left = "";
-        contentStyle.top = "";
-        contentStyle.height = "";
-        contentStyle.width = "";
-        contentStyle.transform = "";
-        
-        var paneStyle = this._dom.pane.style;
-        paneStyle.height = "";
-        paneStyle.width = "";
-        paneStyle.transform = "";
-    }
-    
-    private _getHiddenContentSize(shownContentSize: { width: number; height: number }, hiddenPaneThickness: number, shownPaneThickness: number): { width: number; height: number } {
-        if (this.shownDisplayMode === ShownDisplayMode.overlay) {
-            return shownContentSize;
-        } else {
-            var paneDiff = shownPaneThickness - hiddenPaneThickness;
-            return this._horizontal ? {
-                width: shownContentSize.width + paneDiff,
-                height: shownContentSize.height
-            } : {
-                width: shownContentSize.width,
-                height: shownContentSize.height + paneDiff
-            }
-        }
-    }
-    
-    private _getHiddenContentPosition(shownContentPosition: { left: number; top: number }, hiddenPaneThickness: number, shownPaneThickness: number): { left: number; top: number } {
-        if (this.shownDisplayMode === ShownDisplayMode.overlay) {
-            return shownContentPosition;
-        } else {
-            var placementRight = this._rtl ? Placement.left : Placement.right;
-            var sign = this.placement === placementRight || this.placement === Placement.bottom ? 0 : -1;
-            var paneDiff = shownPaneThickness - hiddenPaneThickness;
-            
-            return this._horizontal ? {
-                left: shownContentPosition.left + sign * paneDiff,
-                top: shownContentPosition.top  
-            } : {
-                left: shownContentPosition.left,
-                top: shownContentPosition.top + sign * paneDiff
-            };
-        }
-    }
-    
+    // Should be called while SplitView is rendered in its shown mode
     _playShowAnimation(hiddenPaneThickness: number): Promise<any> {
         var dim = this._horizontal ? "width" : "height";
         var shownPaneSize = measureContentSize(this._dom.paneWrapper);
@@ -903,6 +912,7 @@ class SplitView {
         });
     }
     
+    // Should be called while SplitView is rendered in its shown mode
     _playHideAnimation(hiddenPaneThickness: number): Promise<any> {
         var dim = this._horizontal ? "width" : "height";
         var shownPaneSize = measureContentSize(this._dom.paneWrapper);
@@ -948,14 +958,6 @@ class SplitView {
         return playHideAnimation().then(() => {
             this._clearAnimation();
         });
-    }
-
-    _paneSlideIn(shownPaneSize: { width: number; height: number; }): Promise<any> {
-        return showEdgeUI(this._dom.paneWrapper, this._getAnimationOffsets(shownPaneSize));
-    }
-
-    _paneSlideOut(shownPaneSize: { width: number; height: number; }): Promise<any> {
-        return hideEdgeUI(this._dom.paneWrapper, this._getAnimationOffsets(shownPaneSize));
     }
     
     private _rendered: {
