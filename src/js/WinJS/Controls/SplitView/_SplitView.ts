@@ -16,6 +16,16 @@ import _TransitionAnimation = require('../../Animations/_TransitionAnimation');
 
 "use strict";
 
+interface ISize {
+    width: number;
+    height: number
+}
+
+interface IPosition {
+    left: number;
+    top: number
+}
+
 var Strings = {
     get duplicateConstruction() { return "Invalid argument: Controls may only be instantiated one time for each DOM element"; }
 };
@@ -84,14 +94,15 @@ placementClassMap[Placement.top] = ClassNames._placementTop;
 placementClassMap[Placement.bottom] = ClassNames._placementBottom;
 
 // Versions of add/removeClass that are no ops when called with falsy class names.
-function addClass(element: HTMLElement, className: string) {
+function addClass(element: HTMLElement, className: string): void {
     className && _ElementUtilities.addClass(element, className);
 }
-function removeClass(element: HTMLElement, className: string) {
+function removeClass(element: HTMLElement, className: string): void {
     className && _ElementUtilities.removeClass(element, className);
 }
 
-function inDom(element: HTMLElement) {
+// Returns a promise which completes when *element* is in the DOM.
+function inDom(element: HTMLElement): Promise<any> {
     return new Promise(function (c) {
         if (_Global.document.body.contains(element)) {
             c();
@@ -106,21 +117,21 @@ function inDom(element: HTMLElement) {
     });
 }
 
-function measureContentSize(element: HTMLElement) {
+function measureContentSize(element: HTMLElement): ISize {
     return {
         width: _ElementUtilities.getContentWidth(element),
         height: _ElementUtilities.getContentHeight(element)
     };
 }
 
-function measureTotalSize(element: HTMLElement) {
+function measureTotalSize(element: HTMLElement): ISize {
     return {
         width: _ElementUtilities.getTotalWidth(element),
         height: _ElementUtilities.getTotalHeight(element)
     };
 }
 
-function measureAbsolutePosition(element: HTMLElement) {
+function measureAbsolutePosition(element: HTMLElement): IPosition {
     var style = getComputedStyle(element);
     var marginLeft = parseInt(style.marginLeft, 10);
     var marginTop = parseInt(style.marginTop, 10);
@@ -706,7 +717,7 @@ class SplitView {
         };
     }
     
-    private _setContentRect(contentSize: { width: number; height: number }, contentPosition: { left: number; top: number }) {
+    private _setContentRect(contentSize: ISize, contentPosition: IPosition) {
         var contentStyle = this._dom.content.style;
         contentStyle.left = contentPosition.left + "px";
         contentStyle.top = contentPosition.top + "px";
@@ -714,7 +725,7 @@ class SplitView {
         contentStyle.width = contentSize.width + "px";
     }
     
-    private _prepareAnimation(paneSize: { width: number; height: number }, panePosition: { left: number; top: number }, contentSize: { width: number; height: number }, contentPosition: { left: number; top: number }): void {
+    private _prepareAnimation(paneSize: ISize, panePosition: IPosition, contentSize: ISize, contentPosition: IPosition): void {
         var paneWrapperStyle = this._dom.paneWrapper.style;
         paneWrapperStyle.position = "absolute";
         paneWrapperStyle.zIndex = "1";
@@ -754,7 +765,7 @@ class SplitView {
         paneStyle.transform = "";
     }
     
-    private _getHiddenContentSize(shownContentSize: { width: number; height: number }, hiddenPaneThickness: number, shownPaneThickness: number): { width: number; height: number } {
+    private _getHiddenContentSize(shownContentSize: ISize, hiddenPaneThickness: number, shownPaneThickness: number): ISize {
         if (this.shownDisplayMode === ShownDisplayMode.overlay) {
             return shownContentSize;
         } else {
@@ -769,7 +780,7 @@ class SplitView {
         }
     }
     
-    private _getHiddenContentPosition(shownContentPosition: { left: number; top: number }, hiddenPaneThickness: number, shownPaneThickness: number): { left: number; top: number } {
+    private _getHiddenContentPosition(shownContentPosition: IPosition, hiddenPaneThickness: number, shownPaneThickness: number): IPosition {
         if (this.shownDisplayMode === ShownDisplayMode.overlay) {
             return shownContentPosition;
         } else {
@@ -787,7 +798,7 @@ class SplitView {
         }
     }
     
-    private _getAnimationOffsets(shownPaneSize: { width: number; height: number; }): { top: string; left: string; } {
+    private _getAnimationOffsets(shownPaneSize: ISize): { top: string; left: string; } {
         var placementLeft = this._rtl ? Placement.right : Placement.left;
         return this._horizontal ? {
             left: (this.placement === placementLeft ? -1 : 1) * shownPaneSize.width + "px",
@@ -798,11 +809,11 @@ class SplitView {
         };
     }
     
-    private _paneSlideIn(shownPaneSize: { width: number; height: number; }): Promise<any> {
+    private _paneSlideIn(shownPaneSize: ISize): Promise<any> {
         return showEdgeUI(this._dom.paneWrapper, this._getAnimationOffsets(shownPaneSize));
     }
 
-    private _paneSlideOut(shownPaneSize: { width: number; height: number; }): Promise<any> {
+    private _paneSlideOut(shownPaneSize: ISize): Promise<any> {
         return hideEdgeUI(this._dom.paneWrapper, this._getAnimationOffsets(shownPaneSize));
     }
 
