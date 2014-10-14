@@ -9,7 +9,7 @@ _Base.Namespace.define("WinJS.UI", {
             require(["./SplitView/_SplitView"], (m: typeof _SplitView) => {
                 module = m;
             });
-            return module;
+            return module.SplitView;
         }
     }
 });

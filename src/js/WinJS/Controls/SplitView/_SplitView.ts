@@ -16,14 +16,18 @@ import _TransitionAnimation = require('../../Animations/_TransitionAnimation');
 
 "use strict";
 
-interface ISize {
-    width: number;
-    height: number
+interface IRect {
+    left: number;
+    top: number;
+    contentWidth: number;
+    contentHeight: number
+    totalWidth: number;
+    totalHeight: number;
 }
 
-interface IPosition {
-    left: number;
-    top: number
+export interface IThickness {
+    content: number;
+    total: number;
 }
 
 var Strings = {
@@ -54,6 +58,10 @@ var EventNames = {
     afterShow: "aftershow",
     beforeHide: "beforehide",
     afterHide: "afterhide"
+};
+var Dimension = {
+    width: "width",
+    height: "height"
 };
 
 var ShownDisplayMode = {
@@ -101,6 +109,16 @@ function removeClass(element: HTMLElement, className: string): void {
     className && _ElementUtilities.removeClass(element, className);
 }
 
+function rectToThickness(rect: IRect, dimension: string): IThickness {
+    return (dimension === Dimension.width) ? {
+        content: rect.contentWidth,
+        total: rect.totalWidth
+    }: {
+        content: rect.contentHeight,
+        total: rect.totalHeight
+    };
+}
+
 // Returns a promise which completes when *element* is in the DOM.
 function inDom(element: HTMLElement): Promise<any> {
     return new Promise(function (c) {
@@ -115,30 +133,6 @@ function inDom(element: HTMLElement): Promise<any> {
             element.addEventListener("WinJSNodeInserted", nodeInsertedHandler, false);
         }
     });
-}
-
-function measureContentSize(element: HTMLElement): ISize {
-    return {
-        width: _ElementUtilities.getContentWidth(element),
-        height: _ElementUtilities.getContentHeight(element)
-    };
-}
-
-function measureTotalSize(element: HTMLElement): ISize {
-    return {
-        width: _ElementUtilities.getTotalWidth(element),
-        height: _ElementUtilities.getTotalHeight(element)
-    };
-}
-
-function measureAbsolutePosition(element: HTMLElement): IPosition {
-    var style = getComputedStyle(element);
-    var marginLeft = parseInt(style.marginLeft, 10);
-    var marginTop = parseInt(style.marginTop, 10);
-    return {
-        left: element.offsetLeft - marginLeft,
-        top: element.offsetTop - marginTop
-    };
 }
 
 //
@@ -169,15 +163,15 @@ function transformWithTransition(element: HTMLElement, transition: { to: string;
     });
 }
 
-function growTransition(elementClipper: HTMLElement, element: HTMLElement, options: { from: number; to: number; dimension: string; inverted: boolean; }): Promise<any> {
-    var diff = options.inverted ? options.to - options.from : options.from - options.to;
-    var translate = options.dimension === "width" ? "translateX" : "translateY";
+function growTransition(elementClipper: HTMLElement, element: HTMLElement, options: { from: IThickness; to: IThickness; dimension: string; inverted: boolean; }): Promise<any> {
+    var diff = options.inverted ? options.to.total - options.from.total : options.from.total - options.to.total;
+    var translate = options.dimension === Dimension.width ? "translateX" : "translateY";
     var size = options.dimension;
 
     // Set up
-    elementClipper.style[size] = options.to + "px";
+    elementClipper.style[size] = options.to.total + "px";
     elementClipper.style.transform = translate + "(" + diff + "px)";
-    element.style[size] = options.to + "px";
+    element.style[size] = options.to.content + "px";
     element.style.transform = translate + "(" + -diff + "px)";
 
     // Resolve styles
@@ -196,9 +190,9 @@ function growTransition(elementClipper: HTMLElement, element: HTMLElement, optio
     ]);
 }
 
-function shrinkTransition(elementClipper: HTMLElement, element: HTMLElement, options: { from: number; to: number; dimension: string; inverted: boolean; }): Promise<any> {
-    var diff = options.inverted ? options.from - options.to : options.to - options.from;
-    var translate = options.dimension === "width" ? "translateX" : "translateY";
+function shrinkTransition(elementClipper: HTMLElement, element: HTMLElement, options: { from: IThickness; to: IThickness; dimension: string; inverted: boolean; }): Promise<any> {
+    var diff = options.inverted ? options.from.total - options.to.total : options.to.total - options.from.total;
+    var translate = options.dimension === Dimension.width ? "translateX" : "translateY";
 
     // Set up
     elementClipper.style.transform = "";
@@ -221,10 +215,10 @@ function shrinkTransition(elementClipper: HTMLElement, element: HTMLElement, opt
     ]);
 }
 
-function resizeTransition(elementClipper: HTMLElement, element: HTMLElement, options: { from: number; to: number; dimension: string; inverted: boolean; }): Promise<any> {
-    if (options.to > options.from) {
+function resizeTransition(elementClipper: HTMLElement, element: HTMLElement, options: { from: IThickness; to: IThickness; dimension: string; inverted: boolean; }): Promise<any> {
+    if (options.to.total > options.from.total) {
         return growTransition(elementClipper, element, options);
-    } else if (options.to < options.from) {
+    } else if (options.to.total < options.from.total) {
         return shrinkTransition(elementClipper, element, options);
     }
 }
@@ -512,7 +506,7 @@ module States {
 /// <resource type="javascript" src="//$(TARGET_DESTINATION)/js/base.js" shared="true" />
 /// <resource type="javascript" src="//$(TARGET_DESTINATION)/js/ui.js" shared="true" />
 /// <resource type="css" src="//$(TARGET_DESTINATION)/css/ui-dark.css" shared="true" />
-class SplitView {
+export class SplitView {
     /// <field locid="WinJS.UI.SplitView.ShownDisplayMode" helpKeyword="WinJS.UI.SplitView.ShownDisplayMode">
     /// Display options for a SplitView's pane.
     /// </field>
@@ -536,7 +530,7 @@ class SplitView {
     };
     _isShownMode: boolean; // Is ClassNames.paneShown present on the SplitView?
     _rtl: boolean;
-    _cachedHiddenPaneThickness: number;
+    _cachedHiddenPaneThickness: IThickness;
 
     constructor(element?: HTMLElement, options: any = {}) {
         /// <signature helpKeyword="WinJS.UI.SplitView.SplitView">
@@ -717,27 +711,42 @@ class SplitView {
         };
     }
     
-    private _setContentRect(contentSize: ISize, contentPosition: IPosition) {
-        var contentStyle = this._dom.content.style;
-        contentStyle.left = contentPosition.left + "px";
-        contentStyle.top = contentPosition.top + "px";
-        contentStyle.height = contentSize.height + "px";
-        contentStyle.width = contentSize.width + "px";
+    private _measureElement(element: HTMLElement): IRect {
+        var style = getComputedStyle(element);
+        var position = _ElementUtilities._getPositionRelativeTo(element, this._dom.root);
+        var marginLeft = parseInt(style.marginLeft, 10);
+        var marginTop = parseInt(style.marginTop, 10);
+        return {
+            left: position.left - marginLeft,
+            top: position.top - marginTop,
+            contentWidth: _ElementUtilities.getContentWidth(element),
+            contentHeight: _ElementUtilities.getContentHeight(element),
+            totalWidth: _ElementUtilities.getTotalWidth(element),
+            totalHeight: _ElementUtilities.getTotalHeight(element)
+        };
     }
     
-    private _prepareAnimation(paneSize: ISize, panePosition: IPosition, contentSize: ISize, contentPosition: IPosition): void {
+    private _setContentRect(contentRect: IRect) {
+        var contentStyle = this._dom.content.style;
+        contentStyle.left = contentRect.left + "px";
+        contentStyle.top = contentRect.top + "px";
+        contentStyle.height = contentRect.contentHeight + "px";
+        contentStyle.width = contentRect.contentWidth + "px";
+    }
+    
+    private _prepareAnimation(paneRect: IRect, contentRect: IRect): void {
         var paneWrapperStyle = this._dom.paneWrapper.style;
         paneWrapperStyle.position = "absolute";
         paneWrapperStyle.zIndex = "1";
-        paneWrapperStyle.left = panePosition.left + "px";
-        paneWrapperStyle.top = panePosition.top + "px";
-        paneWrapperStyle.height = paneSize.height + "px";
-        paneWrapperStyle.width = paneSize.width + "px";
+        paneWrapperStyle.left = paneRect.left + "px";
+        paneWrapperStyle.top = paneRect.top + "px";
+        paneWrapperStyle.height = paneRect.totalHeight + "px";
+        paneWrapperStyle.width = paneRect.totalWidth + "px";
         
         var contentStyle = this._dom.content.style;
         contentStyle.position = "absolute";
         contentStyle.zIndex = "0";
-        this._setContentRect(contentSize, contentPosition);
+        this._setContentRect(contentRect);
     }
     
     private _clearAnimation(): void {
@@ -765,56 +774,51 @@ class SplitView {
         paneStyle.transform = "";
     }
     
-    private _getHiddenContentSize(shownContentSize: ISize, hiddenPaneThickness: number, shownPaneThickness: number): ISize {
+    private _getHiddenContentRect(shownContentRect: IRect, hiddenPaneThickness: IThickness, shownPaneThickness: IThickness): IRect {
         if (this.shownDisplayMode === ShownDisplayMode.overlay) {
-            return shownContentSize;
+            return shownContentRect;
         } else {
-            var paneDiff = shownPaneThickness - hiddenPaneThickness;
+            var placementRight = this._rtl ? Placement.left : Placement.right;
+            var sign = this.placement === placementRight || this.placement === Placement.bottom ? 0 : 1;
+            var paneDiff = {
+                content: shownPaneThickness.content - hiddenPaneThickness.content,
+                total: shownPaneThickness.total - hiddenPaneThickness.total
+            };
             return this._horizontal ? {
-                width: shownContentSize.width + paneDiff,
-                height: shownContentSize.height
+                left: shownContentRect.left - sign * paneDiff.total,
+                top: shownContentRect.top,
+                contentWidth: shownContentRect.contentWidth + paneDiff.content,
+                contentHeight: shownContentRect.contentHeight,
+                totalWidth: shownContentRect.totalWidth + paneDiff.total,
+                totalHeight: shownContentRect.totalHeight
             } : {
-                width: shownContentSize.width,
-                height: shownContentSize.height + paneDiff
+                left: shownContentRect.left,
+                top: shownContentRect.top - sign * paneDiff.total,
+                contentWidth: shownContentRect.contentWidth,
+                contentHeight: shownContentRect.contentHeight + paneDiff.content,
+                totalWidth: shownContentRect.totalWidth,
+                totalHeight: shownContentRect.totalHeight + paneDiff.total
             }
         }
     }
     
-    private _getHiddenContentPosition(shownContentPosition: IPosition, hiddenPaneThickness: number, shownPaneThickness: number): IPosition {
-        if (this.shownDisplayMode === ShownDisplayMode.overlay) {
-            return shownContentPosition;
-        } else {
-            var placementRight = this._rtl ? Placement.left : Placement.right;
-            var sign = this.placement === placementRight || this.placement === Placement.bottom ? 0 : -1;
-            var paneDiff = shownPaneThickness - hiddenPaneThickness;
-            
-            return this._horizontal ? {
-                left: shownContentPosition.left + sign * paneDiff,
-                top: shownContentPosition.top  
-            } : {
-                left: shownContentPosition.left,
-                top: shownContentPosition.top + sign * paneDiff
-            };
-        }
-    }
-    
-    private _getAnimationOffsets(shownPaneSize: ISize): { top: string; left: string; } {
+    private _getAnimationOffsets(shownPaneRect: IRect): { top: string; left: string; } {
         var placementLeft = this._rtl ? Placement.right : Placement.left;
         return this._horizontal ? {
-            left: (this.placement === placementLeft ? -1 : 1) * shownPaneSize.width + "px",
+            left: (this.placement === placementLeft ? -1 : 1) * shownPaneRect.totalWidth + "px",
             top: "0px"
         } : {
             left: "0px",
-            top: (this.placement === Placement.top ? -1 : 1) * shownPaneSize.height + "px"
+            top: (this.placement === Placement.top ? -1 : 1) * shownPaneRect.totalHeight + "px"
         };
     }
     
-    private _paneSlideIn(shownPaneSize: ISize): Promise<any> {
-        return showEdgeUI(this._dom.paneWrapper, this._getAnimationOffsets(shownPaneSize));
+    private _paneSlideIn(shownPaneRect: IRect): Promise<any> {
+        return showEdgeUI(this._dom.paneWrapper, this._getAnimationOffsets(shownPaneRect));
     }
 
-    private _paneSlideOut(shownPaneSize: ISize): Promise<any> {
-        return hideEdgeUI(this._dom.paneWrapper, this._getAnimationOffsets(shownPaneSize));
+    private _paneSlideOut(shownPaneRect: IRect): Promise<any> {
+        return hideEdgeUI(this._dom.paneWrapper, this._getAnimationOffsets(shownPaneRect));
     }
 
     //
@@ -859,14 +863,14 @@ class SplitView {
         });
     }
 
-    _getHiddenPaneThickness(): number {
+    _getHiddenPaneThickness(): IThickness {
         if (this._cachedHiddenPaneThickness === null) {
             if (this._isShownMode) {
                 _ElementUtilities.removeClass(this._dom.root, ClassNames.paneShown);
                 _ElementUtilities.addClass(this._dom.root, ClassNames.paneHidden);
             }
-            var size = measureContentSize(this._dom.paneWrapper);
-            this._cachedHiddenPaneThickness = size[this._horizontal ? "width" : "height"];
+            var size = this._measureElement(this._dom.pane);
+            this._cachedHiddenPaneThickness = rectToThickness(size, this._horizontal ? Dimension.width : Dimension.height);
             if (this._isShownMode) {
                 _ElementUtilities.removeClass(this._dom.root, ClassNames.paneHidden);
                 _ElementUtilities.addClass(this._dom.root, ClassNames.paneShown);
@@ -877,29 +881,27 @@ class SplitView {
     }
     
     // Should be called while SplitView is rendered in its shown mode
-    _playShowAnimation(hiddenPaneThickness: number): Promise<any> {
-        var dim = this._horizontal ? "width" : "height";
-        var shownPaneSize = measureContentSize(this._dom.paneWrapper);
-        var shownPanePosition = measureAbsolutePosition(this._dom.paneWrapper);
-        var shownContentSize = measureContentSize(this._dom.content);
-        var shownContentPosition = measureAbsolutePosition(this._dom.content);
-        var hiddenContentPosition = this._getHiddenContentPosition(shownContentPosition, hiddenPaneThickness, shownPaneSize[dim]);
-        var hiddenContentSize = this._getHiddenContentSize(shownContentSize, hiddenPaneThickness, shownPaneSize[dim]);
-        this._prepareAnimation(shownPaneSize, shownPanePosition, hiddenContentSize, hiddenContentPosition);
+    _playShowAnimation(hiddenPaneThickness: IThickness): Promise<any> {
+        var dim = this._horizontal ? Dimension.width : Dimension.height;
+        var shownPaneRect = this._measureElement(this._dom.pane);
+        var shownContentRect = this._measureElement(this._dom.content);
+        var shownPaneThickness = rectToThickness(shownPaneRect, dim);
+        var hiddenContentRect = this._getHiddenContentRect(shownContentRect, hiddenPaneThickness, shownPaneThickness);
+        this._prepareAnimation(shownPaneRect, hiddenContentRect);
         
         var playPaneAnimation = (): Promise<any> => {
-            var peek = hiddenPaneThickness > 0;
+            var peek = hiddenPaneThickness.total > 0;
             
             if (peek) {
                 var placementRight = this._rtl ? Placement.left : Placement.right;
                 return resizeTransition(this._dom.paneWrapper, this._dom.pane, {
                     from: hiddenPaneThickness,
-                    to: shownPaneSize[dim],
+                    to: shownPaneThickness,
                     dimension: dim,
                     inverted: this.placement === placementRight || this.placement === Placement.bottom
                 });
             } else {
-                return this._paneSlideIn(shownPaneSize);
+                return this._paneSlideIn(shownPaneRect);
             }
         };
         
@@ -910,7 +912,7 @@ class SplitView {
                 var fadeInDelay = 350 * _TransitionAnimation._animationFactor;
                 
                 var contentAnimation = Promise.timeout(fadeInDelay).then(() => {
-                    this._setContentRect(shownContentSize, shownContentPosition);
+                    this._setContentRect(shownContentRect);
                     return fadeIn(this._dom.content);
                 });
                 
@@ -924,29 +926,27 @@ class SplitView {
     }
     
     // Should be called while SplitView is rendered in its shown mode
-    _playHideAnimation(hiddenPaneThickness: number): Promise<any> {
-        var dim = this._horizontal ? "width" : "height";
-        var shownPaneSize = measureContentSize(this._dom.paneWrapper);
-        var shownPanePosition = measureAbsolutePosition(this._dom.paneWrapper);
-        var shownContentSize = measureContentSize(this._dom.content);
-        var shownContentPosition = measureAbsolutePosition(this._dom.content);
-        var hiddenContentPosition = this._getHiddenContentPosition(shownContentPosition, hiddenPaneThickness, shownPaneSize[dim]);
-        var hiddenContentSize = this._getHiddenContentSize(shownContentSize, hiddenPaneThickness, shownPaneSize[dim]);
-        this._prepareAnimation(shownPaneSize, shownPanePosition, shownContentSize, shownContentPosition);
+    _playHideAnimation(hiddenPaneThickness: IThickness): Promise<any> {
+        var dim = this._horizontal ? Dimension.width : Dimension.height;
+        var shownPaneRect = this._measureElement(this._dom.pane);
+        var shownContentRect = this._measureElement(this._dom.content);
+        var shownPaneThickness = rectToThickness(shownPaneRect, dim);
+        var hiddenContentRect = this._getHiddenContentRect(shownContentRect, hiddenPaneThickness, shownPaneThickness);
+        this._prepareAnimation(shownPaneRect, shownContentRect);
         
         var playPaneAnimation = (): Promise<any> => {
-            var peek = hiddenPaneThickness > 0;
+            var peek = hiddenPaneThickness.total > 0;
             
             if (peek) {
                 var placementRight = this._rtl ? Placement.left : Placement.right;
                 return resizeTransition(this._dom.paneWrapper, this._dom.pane, {
-                    from: shownPaneSize[dim],
+                    from: shownPaneThickness,
                     to: hiddenPaneThickness,
                     dimension: dim,
                     inverted: this.placement === placementRight || this.placement === Placement.bottom
                 });
             } else {
-                return this._paneSlideOut(shownPaneSize);
+                return this._paneSlideOut(shownPaneRect);
             }
         };
         
@@ -957,7 +957,7 @@ class SplitView {
                 var fadeInDelay = 267 * _TransitionAnimation._animationFactor;
                 
                 var contentAnimation = Promise.timeout(fadeInDelay).then(() => {
-                    this._setContentRect(hiddenContentSize, hiddenContentPosition);
+                    this._setContentRect(hiddenContentRect);
                     return fadeIn(this._dom.content);
                 });
                 
@@ -1022,11 +1022,11 @@ class SplitView {
         if (this._isShownMode && this.shownDisplayMode === ShownDisplayMode.overlay) {
             var hiddenPaneThickness = this._getHiddenPaneThickness();
             if (this._horizontal) {
-                width = hiddenPaneThickness + "px";
+                width = hiddenPaneThickness.total + "px";
                 height = "";
             } else {
                 width = "";
-                height = hiddenPaneThickness + "px";
+                height = hiddenPaneThickness.total + "px";
             }
         } else {
             width = "";
@@ -1049,4 +1049,3 @@ _Base.Class.mix(SplitView, _Events.createEventProperties(
     EventNames.afterHide
     ));
 _Base.Class.mix(SplitView, _Control.DOMEventMixin);
-export = SplitView;
