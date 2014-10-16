@@ -4,15 +4,12 @@
 @import "mixins.less";
 
 .win-splitview {
-    @shown-pane-width: 320px;
-    @shown-pane-height: 320px;
-    
     position: relative;
     width: 100%;
     height: 100%;
     #flex > .display-flex();
     overflow: hidden;
-
+    
     &.win-splitview-placementtop,
     &.win-splitview-placementbottom {
         #flex > .flex-direction(column);
@@ -40,38 +37,36 @@
     }
 
     &.win-splitview-pane-shown {
-        &.win-splitview-placementtop {
+        &.win-splitview-placementleft,
+        &.win-splitview-placementright {
             .win-splitview-pane {
-                height: @shown-pane-height;
-            }
-
-            &.win-splitview-overlaymode .win-splitview-panewrapper {
-                position: absolute;
-                top: 0;
-                left: 0;
-                width: 100%;
+                width: 320px;
             }
         }
-
+        
+        &.win-splitview-placementtop,
         &.win-splitview-placementbottom {
             .win-splitview-pane {
-                height: @shown-pane-height;
+                height: 320px;
             }
+        }
+        
+        &.win-splitview-placementtop.win-splitview-overlaymode .win-splitview-panewrapper {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+        }
 
-            &.win-splitview-overlaymode .win-splitview-panewrapper {
-                position: absolute;
-                bottom: 0;
-                left: 0;
-                width: 100%;
-            }
+        &.win-splitview-placementbottom.win-splitview-overlaymode .win-splitview-panewrapper {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
         }
 
         &.win-splitview-placementleft,
         &.win-splitview-placementright.win-splitview-rtl {
-            .win-splitview-pane {
-                width: @shown-pane-width;
-            }
-
             &.win-splitview-overlaymode .win-splitview-panewrapper {
                 position: absolute;
                 top: 0;
@@ -83,10 +78,6 @@
 
         &.win-splitview-placementright,
         &.win-splitview-placementleft.win-splitview-rtl {
-            .win-splitview-pane {
-                width: @shown-pane-width;
-            }
-
             &.win-splitview-overlaymode .win-splitview-panewrapper {
                 position: absolute;
                 top: 0;
