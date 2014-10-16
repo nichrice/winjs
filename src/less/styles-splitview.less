@@ -65,9 +65,8 @@
                 left: 0;
                 width: 100%;
             }
-    
-            &.win-splitview-placementleft,
-            &.win-splitview-placementright.win-splitview-rtl {
+        
+            @pane-left: {
                 .win-splitview-panewrapper {
                     position: absolute;
                     top: 0;
@@ -75,10 +74,9 @@
                     right: auto;
                     height: 100%;
                 }
-            }
-    
-            &.win-splitview-placementright,
-            &.win-splitview-placementleft.win-splitview-rtl {
+            };
+            
+            @pane-right: {
                 .win-splitview-panewrapper {
                     position: absolute;
                     top: 0;
@@ -86,6 +84,16 @@
                     right: 0;
                     height: 100%;
                 }
+            };
+            
+            &.win-splitview-placementleft {
+                @pane-left();
+                .RTL(@pane-right);
+            }
+            
+            &.win-splitview-placementright {
+                @pane-right();
+                .RTL(@pane-left);
             }
         }
     }

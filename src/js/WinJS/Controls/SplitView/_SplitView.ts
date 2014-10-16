@@ -44,8 +44,7 @@ var ClassNames = {
     // hidden/shown
     paneHidden: "win-splitview-pane-hidden",
     paneShown: "win-splitview-pane-shown",
-
-    _rtl: "win-splitview-rtl",
+    
     _panePlaceholder: "win-splitview-paneplaceholder",
     _paneWrapper: "win-splitview-panewrapper",
     // placement
@@ -249,9 +248,6 @@ module States {
                     
                     return _ElementUtilities._inDom(this.splitView._dom.root).then(() => {
                         this.splitView._rtl = _Global.getComputedStyle(this.splitView._dom.root).direction === 'rtl';
-                        if (this.splitView._rtl) {
-                            _ElementUtilities.addClass(this.splitView._dom.root, ClassNames._rtl);
-                        }
                         this.splitView._isShownMode = !this._hidden;
                         this.splitView._updateDomImpl();
                         this.splitView._setState(this._hidden ? Hidden : Shown);
