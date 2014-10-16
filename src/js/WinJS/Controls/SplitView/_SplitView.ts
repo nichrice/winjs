@@ -1,17 +1,17 @@
 // Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved. Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
-import _Dispose = require('../../Utilities/_Dispose');
-import _Global = require('../../Core/_Global');
+import Animations = require('../../Animations');
 import _Base = require('../../Core/_Base');
 import _BaseUtils = require('../../Core/_BaseUtils');
-import _Events = require('../../Core/_Events');
-import _ErrorFromName = require('../../Core/_ErrorFromName');
 import _Control = require('../../Utilities/_Control');
-import _Hoverable = require('../../Utilities/_Hoverable');
+import _Dispose = require('../../Utilities/_Dispose');
 import _ElementUtilities = require('../../Utilities/_ElementUtilities');
+import _ErrorFromName = require('../../Core/_ErrorFromName');
+import _Events = require('../../Core/_Events');
+import _Global = require('../../Core/_Global');
+import _Hoverable = require('../../Utilities/_Hoverable');
 import Promise = require('../../Promise');
 import _Signal = require('../../_Signal');
-import Animations = require('../../Animations');
 import _TransitionAnimation = require('../../Animations/_TransitionAnimation');
 
 declare var require: any;
@@ -33,6 +33,7 @@ export interface IThickness {
     total: number;
 }
 
+var transformNames = _BaseUtils._browserStyleEquivalents["transform"];
 var Strings = {
     get duplicateConstruction() { return "Invalid argument: Controls may only be instantiated one time for each DOM element"; }
 };
@@ -146,8 +147,8 @@ function inDom(element: HTMLElement): Promise<any> {
 
 function transformWithTransition(element: HTMLElement, transition: { to: string; duration: number; timing: string; }): Promise<any> {
     var duration = transition.duration * _TransitionAnimation._animationFactor;
-    element.style.transition = duration + "ms transform " + transition.timing;
-    element.style.transform = transition.to;
+    element.style.transition = duration + "ms " + transformNames.cssName + " " + transition.timing;
+    element.style[transformNames.scriptName] = transition.to;
 
     return new Promise((c) => {
         var finish = function () {
@@ -173,9 +174,9 @@ function growTransition(elementClipper: HTMLElement, element: HTMLElement, optio
 
     // Set up
     elementClipper.style[size] = options.to.total + "px";
-    elementClipper.style.transform = translate + "(" + diff + "px)";
+    elementClipper.style[transformNames.scriptName] = translate + "(" + diff + "px)";
     element.style[size] = options.to.content + "px";
-    element.style.transform = translate + "(" + -diff + "px)";
+    element.style[transformNames.scriptName] = translate + "(" + -diff + "px)";
 
     // Resolve styles
     getComputedStyle(elementClipper).opacity;
@@ -198,8 +199,8 @@ function shrinkTransition(elementClipper: HTMLElement, element: HTMLElement, opt
     var translate = options.dimension === Dimension.width ? "translateX" : "translateY";
 
     // Set up
-    elementClipper.style.transform = "";
-    element.style.transform = "";
+    elementClipper.style[transformNames.scriptName] = "";
+    element.style[transformNames.scriptName] = "";
 
     // Resolve styles
     getComputedStyle(elementClipper).opacity;
@@ -223,6 +224,8 @@ function resizeTransition(elementClipper: HTMLElement, element: HTMLElement, opt
         return growTransition(elementClipper, element, options);
     } else if (options.to.total < options.from.total) {
         return shrinkTransition(elementClipper, element, options);
+    } else {
+        return Promise.as();
     }
 }
 
@@ -288,12 +291,12 @@ interface ISplitViewState {
 //   how the control's APIs have been used by the time it is inserted into the DOM:
 //     Init -> Hidden
 //     Init -> Shown
-//   Following that, the life of the SplitView will be dominated by the following 3
+//   Following that, the life of the SplitView will be dominated by the following
 //   sequences of transitions. In geneneral, these sequences are uninterruptible.
 //     Hidden -> BeforeShow -> Hidden (when preventDefault is called on beforeshow event)
 //     Hidden -> BeforeShow -> Showing -> Shown
-//     Shown -> BeforeHide -> Hiding -> Hidden
 //     Shown -> BeforeHide -> Shown (when preventDefault is called on beforehide event)
+//     Shown -> BeforeHide -> Hiding -> Hidden
 //   However, any state can be interrupted to go to the Disposed state:
 //     * -> Disposed
 
@@ -714,7 +717,6 @@ export class SplitView {
         root["winControl"] = this;
         _ElementUtilities.addClass(root, ClassNames.splitView);
         _ElementUtilities.addClass(root, "win-disposable");
-        _ElementUtilities.addClass(root, ClassNames.paneHidden);
         
         this._dom = {
             root: root,
@@ -782,7 +784,7 @@ export class SplitView {
         paneWrapperStyle.top = "";
         paneWrapperStyle.height = "";
         paneWrapperStyle.width = "";
-        paneWrapperStyle.transform = "";
+        paneWrapperStyle[transformNames.scriptName] = "";
         
         var contentStyle = this._dom.content.style;
         contentStyle.position = "";
@@ -791,12 +793,12 @@ export class SplitView {
         contentStyle.top = "";
         contentStyle.height = "";
         contentStyle.width = "";
-        contentStyle.transform = "";
+        contentStyle[transformNames.scriptName] = "";
         
         var paneStyle = this._dom.pane.style;
         paneStyle.height = "";
         paneStyle.width = "";
-        paneStyle.transform = "";
+        paneStyle[transformNames.scriptName] = "";
     }
     
     private _getHiddenContentRect(shownContentRect: IRect, hiddenPaneThickness: IThickness, shownPaneThickness: IThickness): IRect {
@@ -804,13 +806,13 @@ export class SplitView {
             return shownContentRect;
         } else {
             var placementRight = this._rtl ? Placement.left : Placement.right;
-            var sign = this.placement === placementRight || this.placement === Placement.bottom ? 0 : 1;
+            var multiplier = this.placement === placementRight || this.placement === Placement.bottom ? 0 : 1;
             var paneDiff = {
                 content: shownPaneThickness.content - hiddenPaneThickness.content,
                 total: shownPaneThickness.total - hiddenPaneThickness.total
             };
             return this._horizontal ? {
-                left: shownContentRect.left - sign * paneDiff.total,
+                left: shownContentRect.left - multiplier * paneDiff.total,
                 top: shownContentRect.top,
                 contentWidth: shownContentRect.contentWidth + paneDiff.content,
                 contentHeight: shownContentRect.contentHeight,
@@ -818,7 +820,7 @@ export class SplitView {
                 totalHeight: shownContentRect.totalHeight
             } : {
                 left: shownContentRect.left,
-                top: shownContentRect.top - sign * paneDiff.total,
+                top: shownContentRect.top - multiplier * paneDiff.total,
                 contentWidth: shownContentRect.contentWidth,
                 contentHeight: shownContentRect.contentHeight + paneDiff.content,
                 totalWidth: shownContentRect.totalWidth,

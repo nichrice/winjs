@@ -29,6 +29,7 @@ var define;
     // WinJS/Core depends on ./Core/_Base
     // should return WinJS/Core/_Base
     function normalize(id, dependencies) {
+        id = id || "";
         var parent = id.split('/');
         parent.pop();
         return dependencies.map(function (dep) {
@@ -89,7 +90,7 @@ var define;
         if (!Array.isArray(dependencies)) {
             dependencies = [dependencies];
         }
-        load(dependencies, factory, "");
+        load(dependencies, factory);
     };
 
 
