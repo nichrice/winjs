@@ -123,112 +123,6 @@ function rectToThickness(rect: IRect, dimension: string): IThickness {
     };
 }
 
-// Returns a promise which completes when *element* is in the DOM.
-function inDom(element: HTMLElement): Promise<any> {
-    return new Promise(function (c) {
-        if (_Global.document.body.contains(element)) {
-            c();
-        } else {
-            var nodeInsertedHandler = () => {
-                element.removeEventListener("WinJSNodeInserted", nodeInsertedHandler, false);
-                c();
-            };
-            _ElementUtilities._addInsertedNotifier(element);
-            element.addEventListener("WinJSNodeInserted", nodeInsertedHandler, false);
-        }
-    });
-}
-
-//
-// Resize animation
-//  The resize animation requires 2 animations to run simultaneously in sync with each other. It's implemented
-//  without PVL because PVL doesn't provide a way to guarantee that 2 animations will start at the same time.
-//
-
-function transformWithTransition(element: HTMLElement, transition: { to: string; duration: number; timing: string; }): Promise<any> {
-    var duration = transition.duration * _TransitionAnimation._animationFactor;
-    element.style.transition = duration + "ms " + transformNames.cssName + " " + transition.timing;
-    element.style[transformNames.scriptName] = transition.to;
-
-    return new Promise((c) => {
-        var finish = function () {
-            clearTimeout(timeoutId);
-            element.removeEventListener("transitionend", finish);
-            element.style.transition = "";
-            c();
-        };
-
-        // Watch dog timeout
-        var timeoutId = _Global.setTimeout(function () {
-            timeoutId = _Global.setTimeout(finish, duration);
-        }, 50);
-
-        element.addEventListener("transitionend", finish);
-    });
-}
-
-function growTransition(elementClipper: HTMLElement, element: HTMLElement, options: { from: IThickness; to: IThickness; dimension: string; inverted: boolean; }): Promise<any> {
-    var diff = options.inverted ? options.to.total - options.from.total : options.from.total - options.to.total;
-    var translate = options.dimension === Dimension.width ? "translateX" : "translateY";
-    var size = options.dimension;
-
-    // Set up
-    elementClipper.style[size] = options.to.total + "px";
-    elementClipper.style[transformNames.scriptName] = translate + "(" + diff + "px)";
-    element.style[size] = options.to.content + "px";
-    element.style[transformNames.scriptName] = translate + "(" + -diff + "px)";
-
-    // Resolve styles
-    getComputedStyle(elementClipper).opacity;
-    getComputedStyle(element).opacity;
-    
-    // Animate
-    var transition = {
-        duration: 367,
-        timing: "cubic-bezier(0.1, 0.9, 0.2, 1)",
-        to: ""
-    };
-    return Promise.join([
-        transformWithTransition(elementClipper,  transition),
-        transformWithTransition(element, transition)
-    ]);
-}
-
-function shrinkTransition(elementClipper: HTMLElement, element: HTMLElement, options: { from: IThickness; to: IThickness; dimension: string; inverted: boolean; }): Promise<any> {
-    var diff = options.inverted ? options.from.total - options.to.total : options.to.total - options.from.total;
-    var translate = options.dimension === Dimension.width ? "translateX" : "translateY";
-
-    // Set up
-    elementClipper.style[transformNames.scriptName] = "";
-    element.style[transformNames.scriptName] = "";
-
-    // Resolve styles
-    getComputedStyle(elementClipper).opacity;
-    getComputedStyle(element).opacity;
-
-    // Animate
-    var transition = {
-        duration: 367,
-        timing: "cubic-bezier(0.1, 0.9, 0.2, 1)"
-    };
-    var clipperTransition = _BaseUtils._merge(transition, { to: translate + "(" + diff + "px)" });
-    var elementTransition = _BaseUtils._merge(transition, { to: translate + "(" + -diff + "px)" });
-    return Promise.join([
-        transformWithTransition(elementClipper, clipperTransition),
-        transformWithTransition(element, elementTransition)
-    ]);
-}
-
-function resizeTransition(elementClipper: HTMLElement, element: HTMLElement, options: { from: IThickness; to: IThickness; dimension: string; inverted: boolean; }): Promise<any> {
-    if (options.to.total > options.from.total) {
-        return growTransition(elementClipper, element, options);
-    } else if (options.to.total < options.from.total) {
-        return shrinkTransition(elementClipper, element, options);
-    } else {
-        return Promise.as();
-    }
-}
-
 // WinJS animation promises always complete successfully. This
 // helper allows an animation promise to complete in the canceled state
 // so that the success handler can be skipped when the animation is
@@ -255,12 +149,42 @@ function fadeIn(elements: any): Promise<any> {
 // State machine
 //
 
+// Noop function, used in the various states to indicate that they don't support a given
+// message. Named with the somewhat cute name '_' because it reads really well in the states.
 function _() { }
 
-function interruptible<T>(object: T, workFn: (promise: Promise<any>, object: T) => Promise<any>) {
+// Implementing the control as a state machine helps us correctly handle:
+//   - re-entrancy while firing events
+//   - calls into the control during asynchronous operations (e.g. animations)
+//
+// Many of the states do their "enter" work within a promise chain. The idea is that if
+// the state is interrupted and exits, the rest of its work can be skipped by canceling
+// the promise chain.
+// An interesting detail is that anytime the state may call into app code (e.g. due to
+// firing an event), the current promise must end and a new promise must be chained off of it.
+// This is necessary because the app code may interact with the control and cause it to
+// change states. If we didn't create a new promise, then the very next line of code that runs
+// after calling into app code may not be valid because the state may have exited. Starting a
+// new promise after each call into app code prevents us from having to worry about this
+// problem. In this configuration, when a promise's success handler runs, it guarantees that
+// the state hasn't exited.
+// For similar reasons, each of the promise chains created in "enter" starts off with a _Signal
+// which is completed at the end of the "enter" function (this boilerplate is abstracted away by
+// the "interruptible" function). The reason is that we don't want any of the code in "enter"
+// to run until the promise chain has been stored in a variable. If we didn't do this (e.g. instead,
+// started the promise chain with Promise.wrap()), then the "enter" code could trigger the "exit"
+// function (via app code) before the promise chain had been stored in a variable. Under these
+// circumstances, the promise chain would be uncancelable and so the "enter" work would be
+// unskippable. This wouldn't be good when we needed the state to exit early.
+
+// These two functions manage interruptible work promises (one creates them the other cancels
+// them). They communicate with each other thru the _interruptibleWorkPromises property which
+//  "interruptible" creates on your object.
+
+function interruptible<T>(object: T, workFn: (promise: Promise<any>) => Promise<any>) {
     object["_interruptibleWorkPromises"] = object["_interruptibleWorkPromises"] || [];
     var workStoredSignal = new _Signal();
-    object["_interruptibleWorkPromises"].push(workFn(workStoredSignal.promise, object));
+    object["_interruptibleWorkPromises"].push(workFn(workStoredSignal.promise));
     workStoredSignal.complete();
 }
 
@@ -323,7 +247,7 @@ module States {
                     this.splitView.placement = Placement.left;
                     _Control.setOptions(this.splitView, options);
                     
-                    return inDom(this.splitView._dom.root).then(() => {
+                    return _ElementUtilities._inDom(this.splitView._dom.root).then(() => {
                         this.splitView._rtl = _Global.getComputedStyle(this.splitView._dom.root).direction === 'rtl';
                         if (this.splitView._rtl) {
                             _ElementUtilities.addClass(this.splitView._dom.root, ClassNames._rtl);
@@ -921,11 +845,11 @@ export class SplitView {
             
             if (peek) {
                 var placementRight = this._rtl ? Placement.left : Placement.right;
-                return resizeTransition(this._dom.paneWrapper, this._dom.pane, {
+                return _ElementUtilities._resizeTransition(this._dom.paneWrapper, this._dom.pane, {
                     from: hiddenPaneThickness,
                     to: shownPaneThickness,
                     dimension: dim,
-                    inverted: this.placement === placementRight || this.placement === Placement.bottom
+                    anchorTrailingEdge: this.placement === placementRight || this.placement === Placement.bottom
                 });
             } else {
                 return this._paneSlideIn(shownPaneRect);
@@ -966,11 +890,11 @@ export class SplitView {
             
             if (peek) {
                 var placementRight = this._rtl ? Placement.left : Placement.right;
-                return resizeTransition(this._dom.paneWrapper, this._dom.pane, {
+                return _ElementUtilities._resizeTransition(this._dom.paneWrapper, this._dom.pane, {
                     from: shownPaneThickness,
                     to: hiddenPaneThickness,
                     dimension: dim,
-                    inverted: this.placement === placementRight || this.placement === Placement.bottom
+                    anchorTrailingEdge: this.placement === placementRight || this.placement === Placement.bottom
                 });
             } else {
                 return this._paneSlideOut(shownPaneRect);

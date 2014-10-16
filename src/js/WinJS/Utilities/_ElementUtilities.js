@@ -16,6 +16,7 @@ define([
     }
 
     var _zoomToDuration = 167;
+    var transformNames = _BaseUtils._browserStyleEquivalents["transform"];
 
     function removeEmpties(arr) {
         var len = arr.length;
@@ -977,6 +978,89 @@ define([
         }
         return retVal;
     }
+    
+    //
+    // Resize animation
+    //  The resize animation requires 2 animations to run simultaneously in sync with each other. It's implemented
+    //  without PVL because PVL doesn't provide a way to guarantee that 2 animations will start at the same time.
+    //
+    function transformWithTransition(element, transition) {
+        // transition's properties:
+        // - duration: Number representing the duration of the animation in milliseconds.
+        // - timing: String representing the CSS timing function that controls the progress of the animation.
+        // - to: The value of *element*'s transform property after the animation.
+        var duration = transition.duration;
+        element.style.transition = duration + "ms " + transformNames.cssName + " " + transition.timing;
+        element.style[transformNames.scriptName] = transition.to;
+    
+        return new Promise(function (c) {
+            var finish = function () {
+                clearTimeout(timeoutId);
+                element.removeEventListener("transitionend", finish);
+                element.style.transition = "";
+                c();
+            };
+    
+            // Watch dog timeout
+            var timeoutId = _Global.setTimeout(function () {
+                timeoutId = _Global.setTimeout(finish, duration);
+            }, 50);
+    
+            element.addEventListener("transitionend", finish);
+        });
+    }
+    // See _resizeTransition's comment for documentation on *args*.
+    function growTransition(elementClipper, element, args) {
+        var diff = args.anchorTrailingEdge ? args.to.total - args.from.total : args.from.total - args.to.total;
+        var translate = args.dimension === "width" ? "translateX" : "translateY";
+        var size = args.dimension;
+    
+        // Set up
+        elementClipper.style[size] = args.to.total + "px";
+        elementClipper.style[transformNames.scriptName] = translate + "(" + diff + "px)";
+        element.style[size] = args.to.content + "px";
+        element.style[transformNames.scriptName] = translate + "(" + -diff + "px)";
+    
+        // Resolve styles
+        getComputedStyle(elementClipper).opacity;
+        getComputedStyle(element).opacity;
+        
+        // Animate
+        var transition = {
+            duration: 367,
+            timing: "cubic-bezier(0.1, 0.9, 0.2, 1)",
+            to: ""
+        };
+        return Promise.join([
+            transformWithTransition(elementClipper,  transition),
+            transformWithTransition(element, transition)
+        ]);
+    }
+    // See _resizeTransition's comment for documentation on *args*.
+    function shrinkTransition(elementClipper, element, args) {
+        var diff = args.anchorTrailingEdge ? args.from.total - args.to.total : args.to.total - args.from.total;
+        var translate = args.dimension === "width" ? "translateX" : "translateY";
+    
+        // Set up
+        elementClipper.style[transformNames.scriptName] = "";
+        element.style[transformNames.scriptName] = "";
+    
+        // Resolve styles
+        getComputedStyle(elementClipper).opacity;
+        getComputedStyle(element).opacity;
+    
+        // Animate
+        var transition = {
+            duration: 367,
+            timing: "cubic-bezier(0.1, 0.9, 0.2, 1)"
+        };
+        var clipperTransition = _BaseUtils._merge(transition, { to: translate + "(" + diff + "px)" });
+        var elementTransition = _BaseUtils._merge(transition, { to: translate + "(" + -diff + "px)" });
+        return Promise.join([
+            transformWithTransition(elementClipper, clipperTransition),
+            transformWithTransition(element, elementTransition)
+        ]);
+    }
 
     var _selectionPartsSelector = ".win-selectionborder, .win-selectionbackground, .win-selectioncheckmark, .win-selectioncheckmarkbackground";
     var _dataKey = "_msDataKey";
@@ -1306,6 +1390,22 @@ define([
             }, false);
 
             return hiddenElement;
+        },
+        
+        // Returns a promise which completes when *element* is in the DOM.
+        _inDom: function Utilities_inDom(element) {
+            return new Promise(function (c) {
+                if (_Global.document.body.contains(element)) {
+                    c();
+                } else {
+                    var nodeInsertedHandler = function () {
+                        element.removeEventListener("WinJSNodeInserted", nodeInsertedHandler, false);
+                        c();
+                    };
+                    exports._addInsertedNotifier(element);
+                    element.addEventListener("WinJSNodeInserted", nodeInsertedHandler, false);
+                }
+            });
         },
 
         // Browser agnostic method to set element flex style
@@ -2435,6 +2535,31 @@ define([
             }
 
             return false;
+        },
+        
+        // Plays an animation which makes an element look like it is resizing in 1 dimension. Arguments:
+        // - elementClipper: The parent of *element*. It shouldn't have any margin, border, or padding and its
+        //   size should match element's size. Its purpose is to clip *element* during the animation to give
+        //   it the illusion that it is resizing.
+        // - element: The element that should look like it's resizing.
+        // - args: An object with the following required properties: 
+        //   - from: An object representing the old width/height of the element.
+        //   - to: An object representing the new width/height of the element.
+        //     from/to are objects of the form { content: number; total: number; }. "content" is the
+        //     width/height of *element*'s content box (e.g. getContentWidth). "total" is the width/height
+        //     of *element*'s margin box (e.g. getTotalWidth).
+        //   - dimension: The dimension on which *element* is resizing. Either "width" or "height".
+        //   - anchorTrailingEdge: During the resize animation, one edge will move and the other edge will
+        //     remain where it is. This flag specifies which edge is anchored (i.e. won't move).
+        //
+        _resizeTransition: function Utilities_resizeTransition(elementClipper, element, args) {
+            if (args.to.total > args.from.total) {
+                return growTransition(elementClipper, element, args);
+            } else if (args.to.total < args.from.total) {
+                return shrinkTransition(elementClipper, element, args);
+            } else {
+                return Promise.as();
+            }
         }
 
     });
