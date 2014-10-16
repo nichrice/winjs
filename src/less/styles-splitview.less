@@ -51,39 +51,41 @@
             }
         }
         
-        &.win-splitview-placementtop.win-splitview-overlaymode .win-splitview-panewrapper {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-        }
-
-        &.win-splitview-placementbottom.win-splitview-overlaymode .win-splitview-panewrapper {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-        }
-
-        &.win-splitview-placementleft,
-        &.win-splitview-placementright.win-splitview-rtl {
-            &.win-splitview-overlaymode .win-splitview-panewrapper {
+        &.win-splitview-overlaymode {
+            &.win-splitview-placementtop .win-splitview-panewrapper {
                 position: absolute;
                 top: 0;
                 left: 0;
-                right: auto;
-                height: 100%;
+                width: 100%;
             }
-        }
-
-        &.win-splitview-placementright,
-        &.win-splitview-placementleft.win-splitview-rtl {
-            &.win-splitview-overlaymode .win-splitview-panewrapper {
+    
+            &.win-splitview-placementbottom .win-splitview-panewrapper {
                 position: absolute;
-                top: 0;
-                left: auto;
-                right: 0;
-                height: 100%;
+                bottom: 0;
+                left: 0;
+                width: 100%;
+            }
+    
+            &.win-splitview-placementleft,
+            &.win-splitview-placementright.win-splitview-rtl {
+                .win-splitview-panewrapper {
+                    position: absolute;
+                    top: 0;
+                    left: 0;
+                    right: auto;
+                    height: 100%;
+                }
+            }
+    
+            &.win-splitview-placementright,
+            &.win-splitview-placementleft.win-splitview-rtl {
+                .win-splitview-panewrapper {
+                    position: absolute;
+                    top: 0;
+                    left: auto;
+                    right: 0;
+                    height: 100%;
+                }
             }
         }
     }
