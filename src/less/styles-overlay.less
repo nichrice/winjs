@@ -264,7 +264,7 @@ AppBar
     &.win-menulayout.win-appbar-shown, 
     &.win-menulayout.win-appbar-hiding  {
         .win-appbar-invokebutton {
-            visibility: hidden;;
+            visibility: hidden;
         }
         .win-toolbar.win-toolbar-inlinemenu .win-toolbar-overflowbutton {
             visibility: visible;
@@ -429,6 +429,10 @@ AppBar menu layout
 
     .win-toolbar {
         max-width:100vw;
+
+        &:not(.win-toolbar-empty) .win-toolbar-actionarea {
+            min-height: 48px;
+        }
     }
 
     &.win-appbar-compact {
